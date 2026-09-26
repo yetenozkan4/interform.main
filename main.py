@@ -98,10 +98,10 @@ class LoginModel(BaseModel):
 class ChatModel(BaseModel):
     messages: list
 
-# --- HTML SAYFA ROTALARI ---
+# --- HTML SAYFA ROTALARI (GÜNCELLENDİ) ---
 @app.get("/", response_class=HTMLResponse)
 async def serve_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html", {})
 
 # --- KULLANICI & AUTH API'LERİ ---
 @app.post("/api/register")
