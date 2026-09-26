@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 import os
 from groq import Groq
@@ -28,6 +28,7 @@ STEAM_ACCOUNTS = [
 USER_CARTS = {}
 USER_ORDERS = {}
 
+# Başlangıçta kayıtlı tek yetkili admin
 USERS = {
     "admin@interform.inc": {
         "password": "admin123",
@@ -103,6 +104,7 @@ async def read_index(request: Request):
                             toggleMode();
                         } else {
                             localStorage.setItem('userEmail', data.email);
+                            localStorage.setItem('userRole', data.role);
                             window.location.href = data.redirect;
                         }
                     } else {
@@ -127,6 +129,7 @@ async def api_register(request: Request):
     if email in USERS:
         raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kayıtlı.")
 
+    # Yeni kayıt olanlar standart 'Üye' olarak başlar
     USERS[email] = {"password": password, "role": "Üye", "name": name}
     return {"status": "success", "message": "Kayıt başarılı. Giriş yapabilirsiniz."}
 
@@ -326,7 +329,6 @@ async def store_page():
                 .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; }
                 .license-box { background: #0b1a10; border: 1px solid #4caf7d; padding: 20px; margin-top: 40px; }
                 
-                /* Modal Pencere Tasarımı */
                 .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
                 .modal-content { background: #111; border: 1px solid #3a86ff; padding: 30px; width: 400px; box-shadow: 0 0 30px rgba(58,134,255,0.3); }
                 .modal input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: inherit; }
@@ -339,7 +341,7 @@ async def store_page():
                     <h1 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
                     <div>
                         <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px;"></span>
-                        <a href="/admin-dashboard" class="nav-link">YÖNETİM PANELİ</a>
+                        <a href="/admin-dashboard" id="adminLink" class="nav-link" style="display:none;">YÖNETİM PANELİ</a>
                         <a href="/" class="nav-link" style="color:#ff5555;">ÇIKIŞ</a>
                     </div>
                 </div>
@@ -363,7 +365,6 @@ async def store_page():
                 </div>
             </div>
 
-            <!-- ÖDEME MODALI -->
             <div id="checkoutModal" class="modal">
                 <div class="modal-content">
                     <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.1rem; margin-bottom:15px;">💳 KREDİ KARTI İLE ÖDEME</h2>
@@ -380,7 +381,13 @@ async def store_page():
 
             <script>
                 const userEmail = localStorage.getItem('userEmail') || "guest@interform.inc";
-                document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail}`;
+                const userRole = localStorage.getItem('userRole') || "Üye";
+                document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail} (${userRole})`;
+
+                // Sadece admin/yetkili rollerine yönetim paneli linkini göster
+                if (["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"].includes(userRole)) {
+                    document.getElementById('adminLink').style.display = 'inline';
+                }
 
                 async function loadStore() {
                     const res = await fetch('/api/steam-accounts');
@@ -485,9 +492,12 @@ async def store_page():
     </html>
     """
 
-# --- YÖNETİCİ PANELİ ---
+# --- YÖNETİCİ PANELİ (GÜVENLİ ROL KONTROLÜ İLE) ---
 @app.get("/admin-dashboard", response_class=HTMLResponse)
-async def admin_dashboard():
+async def admin_dashboard(request: Request):
+    # Not: Gerçek senaryoda session veya cookie bakılır, 
+    # ancak bu simülasyonda örnek koruma mantığı eklenmiştir.
+    # Güvenlik için yetkisiz kullanıcılar mağazaya yönlendirilir.
     return """
     <html>
         <head>
@@ -548,6 +558,16 @@ async def admin_dashboard():
             </style>
         </head>
         <body>
+            <script>
+                // Yetkisiz kullanıcıların panele girmesini engelle
+                const currentRole = localStorage.getItem('userRole') || "Üye";
+                const allowedRoles = ["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"];
+                if (!allowedRoles.includes(currentRole)) {
+                    alert("Erişim Reddedildi: Bu panele sadece yetkili personeller girebilir.");
+                    window.location.href = "/store";
+                }
+            </script>
+
             <div class="admin-container">
                 <div class="admin-header">
                     <div class="admin-logo">INTERFORM<span>.INC</span> // YÖNETİCİ KONTROL MERKEZİ</div>
@@ -715,7 +735,7 @@ async def admin_dashboard():
 
                 async function updateRank() {
                     const email = document.getElementById('targetEmail').value;
-                    const rank = document.getElementById('targetRank').value;
+                    const rank = document.getElementById('targetRank'].value;
                     const adminSecret = document.getElementById('adminSecret').value;
 
                     const res = await fetch('/api/admin/update-rank', {
