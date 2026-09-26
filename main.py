@@ -2,12 +2,20 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+import os
+from groq import Groq
 
 app = FastAPI()
 
-# Statik dosyalar ve şablonlar
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Örnek Kullanıcı ve Rol Veritabanı (Simülasyon için bellek içi liste)
+USERS_DB = [
+    {"id": 1, "email": "admin@interform.inc", "role": "Süper Admin", "status": "Aktif"},
+    {"id": 2, "email": "berkay@interform.inc", "role": "Kurumsal Üye", "status": "Aktif"},
+    {"id": 3, "email": "testuser@interform.inc", "role": "Standart Kullanıcı", "status": "Pasif"},
+    {"id": 4, "email": "security@interform.inc", "role": "Güvenlik Sorumlusu", "status": "Aktif"}
+]
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
@@ -27,24 +35,285 @@ async def api_login(request: Request):
     
     raise HTTPException(status_code=400, detail="Geçersiz kimlik bilgileri.")
 
+# YAPAY ZEKA API ENDPOINT
+@app.post("/api/admin/ai-query")
+async def admin_ai_query(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt", "")
+    api_key = os.environ.get("GROQ_API_KEY")
+    
+    if not api_key:
+        return {"response": "[SİSTEM UYARISI]: GROQ_API_KEY çevre değişkeni bulunamadı! Simüle Edilen AI Yanıtı: Rol izin matrisi güncellendi, yetki seviyeleri kararlı."}
+    
+    try:
+        client = Groq(api_key=api_key)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Sen Interform Inc. kurumsal yapay zeka asistanısın. Admin paneli için sistem analizi, güvenlik raporları ve rol yönetimi desteği sağlıyorsun."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+        }
+        return {"response": chat_completion.choices[0].message.content}
+    except Exception as e:
+        return {"response": f"AI Servis Hatası: {str(e)}"}
+
+# ROL GÜNCELLEME ENDPOINT'İ
+@app.post("/api/admin/update-role")
+async def update_role(request: Request):
+    data = await request.json()
+    user_id = data.get("user_id")
+    new_role = data.get("role")
+    
+    for user in USERS_DB:
+        if user["id"] == user_id:
+            user["role"] = new_role
+            return {"status": "success", "message": f"Kullanıcı ID {user_id} rolü '{new_role}' olarak güncellendi."}
+    
+    raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+
 @app.get("/admin-dashboard", response_class=HTMLResponse)
 async def admin_dashboard():
-    return """
+    # Kullanıcı tablosu HTML satırlarını dinamik oluşturalım
+    users_html = ""
+    for u in USERS_DB:
+        users_html += f"""
+        <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px; color: var(--secondary);">{u['id']}</td>
+            <td style="padding: 12px; color: var(--primary); font-weight: 500;">{u['email']}</td>
+            <td style="padding: 12px;">
+                <select id="role-select-{u['id']}" style="background: var(--bg); color: var(--primary); border: 1px solid var(--border); padding: 6px 10px; font-family: 'Rajdhani', sans-serif;">
+                    <option value="Süper Admin" {"selected" if u['role']=="Süper Admin" else ""}>Süper Admin</option>
+                    <option value="Kurumsal Üye" {"selected" if u['role']=="Kurumsal Üye" else ""}>Kurumsal Üye</option>
+                    <option value="Güvenlik Sorumlusu" {"selected" if u['role']=="Güvenlik Sorumlusu" else ""}>Güvenlik Sorumlusu</option>
+                    <option value="Standart Kullanıcı" {"selected" if u['role']=="Standart Kullanıcı" else ""}>Standart Kullanıcı</option>
+                </select>
+            </td>
+            <td style="padding: 12px;"><span style="color: {'var(--success)' if u['status']=='Aktif' else '#ffaa00'};">{u['status']}</span></td>
+            <td style="padding: 12px;">
+                <button onclick="saveRole({u['id']})" style="background: var(--accent); color: #fff; border: none; padding: 6px 12px; font-family: 'Orbitron', monospace; font-size: 0.65rem; cursor: pointer; font-weight: 700;">GÜNCELLE</button>
+            </td>
+        </tr>
+        """
+
+    return f"""
     <html>
         <head>
-            <title>Interform Inc. | Admin Paneli</title>
-            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+            <title>Interform Inc. | Kapsamlı Admin & Rol Yönetimi</title>
+            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+            <style>
+                :root {{
+                    --bg: #070707;
+                    --surface: #111111;
+                    --surface-light: #1a1a1a;
+                    --border: #262626;
+                    --primary: #ffffff;
+                    --secondary: #999999;
+                    --accent: #3a86ff;
+                    --success: #4caf7d;
+                }}
+                * {{ margin:0; padding:0; box-sizing:border-box; }}
+                body {{ background: var(--bg); color: var(--primary); font-family: 'Rajdhani', sans-serif; padding: 30px; min-height: 100vh; }}
+                .admin-container {{ max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 30px; }}
+                
+                .admin-header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; }}
+                .admin-logo {{ font-family: 'Orbitron', monospace; font-size: 1.3rem; font-weight: 900; letter-spacing: 0.2em; color: var(--primary); }}
+                .admin-logo span {{ color: var(--accent); }}
+                .admin-nav {{ display: flex; gap: 15px; align-items: center; }}
+                .badge {{ background: rgba(58,134,255,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; font-family: 'Orbitron', monospace; font-size: 0.7rem; letter-spacing: 0.1em; }}
+                .logout-btn {{ border: 1px solid var(--border); background: var(--surface); color: var(--secondary); padding: 8px 18px; font-family: 'Orbitron', monospace; font-size: 0.75rem; text-decoration: none; transition: 0.2s; }}
+                .logout-btn:hover {{ border-color: var(--primary); color: var(--primary); }}
+
+                /* Stats Grid */
+                .stats-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }}
+                .stat-box {{ background: var(--surface); border: 1px solid var(--border); padding: 25px; }}
+                .stat-title {{ font-family: 'Orbitron', monospace; font-size: 0.75rem; color: var(--secondary); letter-spacing: 0.15em; margin-bottom: 10px; }}
+                .stat-value {{ font-family: 'Orbitron', monospace; font-size: 1.8rem; font-weight: 700; color: var(--primary); }}
+                .stat-value.green {{ color: var(--success); }}
+
+                /* Workspace Grid */
+                .workspace-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }}
+                .full-width-panel {{ background: var(--surface); border: 1px solid var(--border); padding: 30px; }}
+                .panel-card {{ background: var(--surface); border: 1px solid var(--border); padding: 30px; display: flex; flex-direction: column; height: 500px; }}
+                .panel-title {{ font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 700; color: var(--accent); letter-spacing: 0.15em; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }}
+                
+                /* AI Chat Box */
+                .ai-chat-box {{ flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; font-size: 0.95rem; }}
+                .ai-msg {{ padding: 10px 14px; border-radius: 2px; max-width: 85%; line-height: 1.5; }}
+                .ai-msg.system {{ background: var(--surface-light); border-left: 3px solid var(--accent); color: var(--primary); align-self: flex-start; }}
+                .ai-msg.user {{ background: rgba(58,134,255,0.15); border-right: 3px solid var(--accent); color: var(--primary); align-self: flex-end; }}
+                
+                .ai-input-group {{ display: flex; gap: 10px; }}
+                .ai-input {{ flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 12px; color: var(--primary); font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none; }}
+                .ai-input:focus {{ border-color: var(--accent); }}
+                .ai-btn {{ background: var(--accent); color: #fff; border: none; padding: 0 20px; font-family: 'Orbitron', monospace; font-size: 0.75rem; font-weight: 700; cursor: pointer; letter-spacing: 0.1em; }}
+                .ai-btn:hover {{ opacity: 0.9; }}
+
+                /* Toast notification */
+                #toast {{ position: fixed; bottom: 20px; right: 20px; background: var(--success); color: #000; padding: 12px 24px; font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; display: none; z-index: 9999; }}
+
+                @media(max-width: 1024px) {{
+                    .stats-grid {{ grid-template-columns: repeat(2, 1fr); }}
+                    .workspace-grid {{ grid-template-columns: 1fr; }}
+                }}
+            </style>
         </head>
-        <body style="background:#070707; color:#fff; font-family:'Rajdhani',sans-serif; padding:50px;">
-            <div style="max-width:800px; margin:0 auto; border:1px solid #262626; padding:40px; background:#111; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
-                <h1 style="font-family:'Orbitron'; color:#3a86ff; margin-bottom:20px;">// ADMIN KONTROL PANELİ</h1>
-                <p style="font-size: 1.1rem;">Hoş geldiniz, Yetkili Yönetici.</p>
-                <div style="margin-top: 30px; padding: 20px; border: 1px solid #262626; background: #070707;">
-                    <p style="margin-bottom: 10px; color:#999;">Sistem Durumu: <span style="color:#4caf7d;">Aktif & Çalışıyor</span></p>
-                    <p style="color:#999;">AI Entegrasyonu: <span style="color:#3a86ff;">GroQ API Bağlı</span></p>
+        <body>
+            <div id="toast">Rol başarıyla güncellendi!</div>
+            <div class="admin-container">
+                <!-- Header -->
+                <div class="admin-header">
+                    <div class="admin-logo">INTERFORM<span>.INC</span> // YÖNETİM & YETKİ MERKEZİ</div>
+                    <div class="admin-nav">
+                        <div class="badge">SÜPER ADMIN OTURUMU</div>
+                        <a href="/" class="logout-btn">ÇIKIŞ YAP</a>
+                    </div>
                 </div>
-                <a href="/" style="display:inline-block; margin-top:30px; padding:12px 24px; background:#fff; color:#000; text-decoration:none; font-family:'Orbitron'; font-size:0.8rem; font-weight:700;">ANA SAYFAYA DÖN</a>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-title">SİSTEM DURUMU</div>
+                        <div class="stat-value green">STABİL</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">YAPAY ZEKA MODELİ</div>
+                        <div class="stat-value" style="font-size: 1.2rem; margin-top: 5px; color: var(--accent);">Llama-3.3-70b</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">TOPLAM KULLANICI</div>
+                        <div class="stat-value">4</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title">GÜVENLİK DUVARI</div>
+                        <div class="stat-value green">AKTİF</div>
+                    </div>
+                </div>
+
+                <!-- Role Management Table Section -->
+                <div class="full-width-panel">
+                    <div class="panel-title">👥 KULLANICI & ROL YETKİLENDİRME MATRİSİ</div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid var(--border); font-family: 'Orbitron', monospace; font-size: 0.75rem; color: var(--secondary);">
+                                    <th style="padding: 12px;">ID</th>
+                                    <th style="padding: 12px;">E-POSTA</th>
+                                    <th style="padding: 12px;">ATANAN ROL</th>
+                                    <th style="padding: 12px;">DURUM</th>
+                                    <th style="padding: 12px;">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users_html}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Workspace (AI & Logs) -->
+                <div class="workspace-grid">
+                    <!-- AI Panel -->
+                    <div class="panel-card">
+                        <div class="panel-title">🤖 GROQ AI YETKİ & GÜVENLİK ASİSTANI</div>
+                        <div class="ai-chat-box" id="chatBox">
+                            <div class="ai-msg system">Yönetici paneline hoş geldiniz. Rol matrisi ve yetkilendirmeler hakkında AI'ya danışabilirsiniz.</div>
+                        </div>
+                        <div class="ai-input-group">
+                            <input type="text" id="aiPrompt" class="ai-input" placeholder="AI'ya komut ver (Örn: Hangi kullanıcının admin yetkisi var?)" onkeypress="checkEnter(event)">
+                            <button class="ai-btn" onclick="sendAiQuery()">GÖNDER</button>
+                        </div>
+                    </div>
+
+                    <!-- System Logs -->
+                    <div class="panel-card">
+                        <div class="panel-title">🛡️ CANLI ERİŞİM VE GÜVENLİK LOGLARI</div>
+                        <div style="flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 15px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85rem; color: #00ff66; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">[10:38:40] [INFO] FastAPI sunucu başarıyla başlatıldı.</div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">[10:38:42] [AUTH] admin@interform.inc (Süper Admin) oturum açtı.</div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">[10:39:00] [RBAC] Rol matrisi başarıyla yüklendi ve doğrulandı.</div>
+                            <div style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;">[10:40:15] [SECURITY] Güvenlik duvarı politikaları güncellendi.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <script>
+                async function saveRole(userId) {
+                    const selectElement = document.getElementById('role-select-' + userId);
+                    const newRole = selectElement.value;
+
+                    try {
+                        const res = await fetch('/api/admin/update-role', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: userId, role: newRole })
+                        });
+                        const data = await res.json();
+                        
+                        if(res.ok) {
+                            showToast(data.message);
+                        } else {
+                            alert('Hata oluştu!');
+                        }
+                    } catch(err) {
+                        alert('Sunucu bağlantı hatası!');
+                    }
+                }
+
+                function showToast(msg) {
+                    const toast = document.getElementById('toast');
+                    toast.innerText = msg;
+                    toast.style.display = 'block';
+                    setTimeout(() => {
+                        toast.style.display = 'none';
+                    }, 3000);
+                }
+
+                async function sendAiQuery() {
+                    const inputField = document.getElementById('aiPrompt');
+                    const chatBox = document.getElementById('chatBox');
+                    const prompt = inputField.value.trim();
+                    if(!prompt) return;
+
+                    chatBox.innerHTML += `<div class="ai-msg user">${escapeHtml(prompt)}</div>`;
+                    inputField.value = '';
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    const loadingId = 'loading-' + Date.now();
+                    chatBox.innerHTML += `<div class="ai-msg system" id="${loadingId}">AI analiz yapıyor...</div>`;
+                    chatBox.scrollTop = chatBox.scrollHeight;
+
+                    try {
+                        const res = await fetch('/api/admin/ai-query', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ prompt })
+                        });
+                        const data = await res.json();
+                        
+                        document.getElementById(loadingId).remove();
+                        chatBox.innerHTML += `<div class="ai-msg system">${escapeHtml(data.response)}</div>`;
+                    } catch (err) {
+                        document.getElementById(loadingId).remove();
+                        chatBox.innerHTML += `<div class="ai-msg system" style="color:#ff5555;">[HATA]: AI yanıt veremedi.</div>`;
+                    }
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+
+                function checkEnter(e) {
+                    if (e.key === 'Enter') {
+                        sendAiQuery();
+                    }
+                }
+
+                function escapeHtml(text) {
+                    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                }
+            </script>
         </body>
     </html>
     """
