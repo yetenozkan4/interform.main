@@ -37,93 +37,124 @@ USERS = {
     }
 }
 
-# --- 1. NORMAL KURUMSAL ANA SAYFA (GİRİŞ / KAYIT VE KURUMSAL TANITIM) ---
+# --- 1. ESKİ DETAYLI VE OTONOM KURUMSAL ANA SAYFA ---
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     return """
     <html>
         <head>
             <title>Interform Inc. | Otonom Kurumsal Çözümler</title>
-            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
             <style>
-                body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0; }
-                .hero { display: flex; justify-content: space-between; align-items: center; padding: 50px 80px; border-bottom: 1px solid #262626; }
-                .hero-text h1 { font-family: 'Orbitron'; color: #3a86ff; font-size: 2.5rem; margin-bottom: 15px; }
-                .hero-text p { color: #aaa; font-size: 1.1rem; max-width: 600px; line-height: 1.6; }
-                .auth-box { background: #111; border: 1px solid #262626; padding: 30px; width: 350px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-                .auth-box h2 { font-family: 'Orbitron'; color: #3a86ff; font-size: 1.2rem; margin-bottom: 20px; text-align: center; }
-                input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #262626; color: #fff; font-family: inherit; }
-                .btn { background: #3a86ff; color: #fff; border: none; padding: 12px; margin-top: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; }
-                .btn:hover { background: #2670e8; }
-                .toggle-link { text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888; cursor: pointer; }
-                .toggle-link span { color: #3a86ff; text-decoration: underline; }
+                :root {
+                    --bg: #070707; --surface: #111111; --surface-light: #1a1a1a;
+                    --border: #262626; --primary: #ffffff; --secondary: #999999;
+                    --accent: #3a86ff; --success: #4caf7d; --warning: #ffaa00;
+                }
+                * { margin:0; padding:0; box-sizing:border-box; }
+                body { background: var(--bg); color: var(--primary); font-family: 'Rajdhani', sans-serif; overflow-x: hidden; }
                 
-                .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 60px 80px; }
-                .feature-card { background: #111; border: 1px solid #262626; padding: 30px; }
-                .feature-card h3 { font-family: 'Orbitron'; color: #fff; font-size: 1.1rem; margin-bottom: 10px; }
-                .feature-card p { color: #888; font-size: 0.95rem; line-height: 1.5; }
-                .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 80px; border-bottom: 1px solid #262626; background: #0b0b0b; }
-                .nav-links a { color: #aaa; text-decoration: none; margin-left: 20px; font-family: 'Orbitron'; font-size: 0.85rem; }
-                .nav-links a:hover { color: #3a86ff; }
+                .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 60px; border-bottom: 1px solid var(--border); background: rgba(7,7,7,0.95); position: sticky; top: 0; z-index: 1000; }
+                .logo { font-family: 'Orbitron', monospace; font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; color: var(--primary); }
+                .logo span { color: var(--accent); }
+                .nav-links { display: flex; gap: 25px; align-items: center; }
+                .nav-links a { color: var(--secondary); text-decoration: none; font-family: 'Orbitron', monospace; font-size: 0.75rem; transition: color 0.2s; }
+                .nav-links a:hover { color: var(--accent); }
+                .nav-btn { background: rgba(58,134,255,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; font-family: 'Orbitron', monospace; font-size: 0.75rem; text-decoration: none; }
+
+                .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 50px; padding: 80px 60px; align-items: center; border-bottom: 1px solid var(--border); }
+                .hero-content h1 { font-family: 'Orbitron', monospace; font-size: 2.8rem; font-weight: 900; line-height: 1.2; margin-bottom: 20px; }
+                .hero-content h1 span { color: var(--accent); }
+                .hero-content p { color: var(--secondary); font-size: 1.15rem; line-height: 1.6; margin-bottom: 30px; max-width: 650px; }
+                
+                .auth-card { background: var(--surface); border: 1px solid var(--border); padding: 30px; box-shadow: 0 0 40px rgba(0,0,0,0.8); position: relative; }
+                .auth-title { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 20px; text-align: center; }
+                .error-box { background: rgba(255,85,85,0.1); border: 1px solid #ff5555; color: #ff5555; padding: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; }
+                input { width: 100%; padding: 12px; margin-top: 12px; background: var(--bg); border: 1px solid var(--border); color: #fff; font-family: inherit; outline: none; }
+                input:focus { border-color: var(--accent); }
+                .btn { background: var(--accent); color: #fff; border: none; padding: 14px; margin-top: 20px; width: 100%; font-family: 'Orbitron', monospace; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+                .btn:hover { background: #2670e8; }
+                .toggle-link { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--secondary); cursor: pointer; }
+                .toggle-link span { color: var(--accent); text-decoration: underline; }
+
+                .features-section { padding: 80px 60px; }
+                .section-title { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 700; margin-bottom: 40px; text-align: center; }
+                .section-title span { color: var(--accent); }
+                .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
+                .feature-box { background: var(--surface); border: 1px solid var(--border); padding: 35px; transition: border-color 0.2s; }
+                .feature-box:hover { border-color: var(--accent); }
+                .feature-box h3 { font-family: 'Orbitron', monospace; font-size: 1.1rem; margin-bottom: 15px; color: var(--primary); }
+                .feature-box p { color: var(--secondary); font-size: 0.95rem; line-height: 1.6; }
+
+                .footer { padding: 40px 60px; border-top: 1px solid var(--border); text-align: center; color: var(--secondary); font-size: 0.9rem; font-family: 'Orbitron', monospace; }
             </style>
         </head>
         <body>
-            <div class="nav-bar">
-                <div style="font-family:'Orbitron'; font-weight:bold; font-size:1.2rem; color:#3a86ff;">INTERFORM.INC</div>
+            <div class="navbar">
+                <div class="logo">INTERFORM<span>.INC</span></div>
                 <div class="nav-links">
-                    <a href="/">Anasayfa</a>
-                    <a href="/store">Steam Mağazası</a>
-                    <a href="/admin-dashboard">Yönetim Paneli</a>
+                    <a href="/">ANASAYFA</a>
+                    <a href="/store">STEAM MAĞAZASI</a>
+                    <a href="/admin-dashboard">YÖNETİM PANELİ</a>
+                    <a href="/store" class="nav-btn">MAĞAZAYA GİT →</a>
                 </div>
             </div>
 
             <div class="hero">
-                <div class="hero-text">
-                    <h1>YENİ NESİL OTONOM <br>SİSTEM YÖNETİMİ</h1>
-                    <p>Interform Inc., kurumsal altyapılar ve dijital envanterler için yapay zeka destekli otonom denetim ve dağıtım ağları sunar. Güvenli, kesintisiz ve yüksek performanslı çözümlerle tanışın.</p>
-                    <div style="margin-top: 30px;">
-                        <a href="/store" class="btn" style="display:inline-block; width:auto; padding:12px 25px; text-decoration:none; text-align:center;">STEAM MAĞAZASINA GİT →</a>
+                <div class="hero-content">
+                    <h1>YENİ NESİL <span>OTONOM</span> SİSTEM YÖNETİMİ</h1>
+                    <p>Interform Inc., kritik kurumsal altyapılar, yapay zeka destekli otonom onarım mimarileri ve dijital envanter dağıtım ağları sunar. Kesintisiz performans ve yüksek güvenlik standartlarıyla tanışın.</p>
+                    <div style="display: flex; gap: 15px;">
+                        <a href="/store" class="btn" style="display:inline-block; width:auto; padding:14px 30px; text-decoration:none; text-align:center;">STEAM MAĞAZASINI KEŞFET</a>
+                        <a href="/admin-dashboard" class="btn" style="display:inline-block; width:auto; padding:14px 30px; background:var(--surface); border:1px solid var(--border); text-decoration:none; text-align:center;">YÖNETİCİ GİRİŞİ</a>
                     </div>
                 </div>
 
-                <div class="auth-box">
-                    <h2 id="formTitle">// SİSTEM GİRİŞİ</h2>
-                    <div id="errorMsg" style="color:#ff5555; font-size:0.85rem; margin-bottom:10px; display:none;"></div>
+                <div class="auth-card">
+                    <div class="auth-title" id="formTitle">// SİSTEM GİRİŞ PORTALI</div>
+                    <div class="error-box" id="errorMsg"></div>
                     
                     <div id="nameField" style="display:none;">
-                        <input type="text" id="name" placeholder="Ad Soyad / Şirket">
+                        <input type="text" id="name" placeholder="Ad Soyad / Kurum Adı">
                     </div>
-                    <input type="email" id="email" placeholder="E-posta Adresi">
-                    <input type="password" id="password" placeholder="Şifre">
+                    <input type="email" id="email" placeholder="Kurumsal E-posta Adresi">
+                    <input type="password" id="password" placeholder="Erişim Şifresi">
                     
-                    <button class="btn" id="submitBtn" onclick="handleAuth()">GİRİŞ YAP</button>
-                    <div class="toggle-link" onclick="toggleMode()"><span id="toggleText">Hesabınız yok mu? Kayıt olun.</span></div>
+                    <button class="btn" id="submitBtn" onclick="handleAuth()">GİRİŞİ BAŞLAT</button>
+                    <div class="toggle-link" onclick="toggleMode()"><span id="toggleText">Hesabınız yok mu? Kayıt oluşturun.</span></div>
                 </div>
             </div>
 
-            <div class="features">
-                <div class="feature-card">
-                    <h3>Otonom Onarım</h3>
-                    <p>Yapay zeka çekirdeğimiz sistem anormalliklerini milisaniyeler içinde tespit eder ve manuel müdahaleye gerek kalmadan onarır.</p>
+            <div class="features-section">
+                <div class="section-title">KURUMSAL <span>MİMARİ</span> ÖZELLİKLERİ</div>
+                <div class="features-grid">
+                    <div class="feature-box">
+                        <h3>Otonom Self-Healing</h3>
+                        <p>Yapay zeka çekirdeğimiz sistem anormalliklerini milisaniyeler içinde tespit eder ve manuel müdahaleye gerek kalmadan otomatik olarak onarır.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h3>Steam Aile Paylaşım Ağı</h3>
+                        <p>Popüler AAA ve bağımsız oyun lisanslarını güvenli aile havuzu protokolleriyle entegre edin, envanterinizi anında yönetin.</p>
+                    </div>
+                    <div class="feature-box">
+                        <h3>Rol Tabanlı Güvenlik (RBAC)</h3>
+                        <p>Gelişmiş şifreleme ve çok katmanlı yetkilendirme modelleri ile tüm dijital varlıklarınız ve veritabanınız maksimum koruma altındadır.</p>
+                    </div>
                 </div>
-                <div class="feature-card">
-                    <h3>Steam Aile Dağıtımı</h3>
-                    <p>En popüler AAA ve bağımsız oyun lisanslarını güvenli aile havuzu protokolleriyle anında entegre edin ve kiralayın.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>Kurumsal Güvenlik</h3>
-                    <p>Gelişmiş şifreleme ve rol tabanlı yetkilendirme (RBAC) ile tüm varlıklarınız güvence altında tutulur.</p>
-                </div>
+            </div>
+
+            <div class="footer">
+                &copy; 2026 Interform Inc. Tüm Hakları Saklıdır. Otonom Altyapı Sistemleri.
             </div>
 
             <script>
                 let isRegister = false;
                 function toggleMode() {
                     isRegister = !isRegister;
-                    document.getElementById('formTitle').innerText = isRegister ? "// YENİ HESAP OLUŞTUR" : "// SİSTEM GİRİŞİ";
+                    document.getElementById('formTitle').innerText = isRegister ? "// YENİ HESAP OLUŞTUR" : "// SİSTEM GİRİŞ PORTALI";
                     document.getElementById('nameField').style.display = isRegister ? "block" : "none";
-                    document.getElementById('submitBtn').innerText = isRegister ? "KAYIT OL" : "GİRİŞ YAP";
-                    document.getElementById('toggleText').innerText = isRegister ? "Zaten hesabınız var mı? Giriş yapın." : "Hesabınız yok mu? Kayıt olun.";
+                    document.getElementById('submitBtn').innerText = isRegister ? "KAYDI TAMAMLA" : "GİRİŞİ BAŞLAT";
+                    document.getElementById('toggleText').innerText = isRegister ? "Zaten hesabınız var mı? Giriş yapın." : "Hesabınız yok mu? Kayıt oluşturun.";
                 }
 
                 async function handleAuth() {
@@ -194,7 +225,7 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- 2. STEAM MAĞAZA API VE SAYFASI ---
+# --- 2. STEAM MAĞAZA API VE SAYFASI (/store) ---
 @app.get("/api/steam-accounts")
 async def get_steam_accounts():
     return {"accounts": STEAM_ACCOUNTS}
@@ -268,23 +299,24 @@ async def store_page():
     <html>
         <head>
             <title>Interform Inc. | Steam Aile Paylaşımı Mağazası</title>
-            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
             <style>
-                body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; padding: 40px; }
+                :root { --bg: #070707; --surface: #111111; --border: #262626; --accent: #3a86ff; --success: #4caf7d; }
+                body { background: var(--bg); color: #fff; font-family: 'Rajdhani', sans-serif; padding: 40px; }
                 .container { max-width: 1200px; margin: 0 auto; }
-                .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #262626; padding-bottom: 20px; }
+                .header-flex { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
                 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 30px; }
-                .card { background: #111; border: 1px solid #262626; padding: 25px; position: relative; }
-                .badge-family { position: absolute; top: 20px; right: 20px; background: rgba(58,134,255,0.15); border: 1px solid #3a86ff; color: #3a86ff; padding: 4px 10px; font-size: 0.7rem; font-family: 'Orbitron'; }
-                .btn { background: #3a86ff; color: #fff; border: none; padding: 12px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; }
+                .card { background: var(--surface); border: 1px solid var(--border); padding: 25px; position: relative; }
+                .badge-family { position: absolute; top: 20px; right: 20px; background: rgba(58,134,255,0.15); border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; font-size: 0.7rem; font-family: 'Orbitron'; }
+                .btn { background: var(--accent); color: #fff; border: none; padding: 12px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; }
                 .btn:hover { background: #2670e8; }
-                .cart-box { background: #111; border: 1px solid #3a86ff; padding: 25px; margin-top: 40px; }
+                .cart-box { background: var(--surface); border: 1px solid var(--accent); padding: 25px; margin-top: 40px; }
                 .warning-note { background: #1a1a1a; border-left: 3px solid #ffaa00; padding: 15px; margin-top: 20px; font-size: 0.95rem; color: #ccc; }
                 .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; }
-                .license-box { background: #0b1a10; border: 1px solid #4caf7d; padding: 20px; margin-top: 40px; }
+                .license-box { background: #0b1a10; border: 1px solid var(--success); padding: 20px; margin-top: 40px; }
                 
                 .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-                .modal-content { background: #111; border: 1px solid #3a86ff; padding: 30px; width: 400px; box-shadow: 0 0 30px rgba(58,134,255,0.3); }
+                .modal-content { background: var(--surface); border: 1px solid var(--accent); padding: 30px; width: 400px; box-shadow: 0 0 30px rgba(58,134,255,0.3); }
                 .modal input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: inherit; }
                 .row { display: flex; gap: 10px; }
             </style>
@@ -292,7 +324,7 @@ async def store_page():
         <body>
             <div class="container">
                 <div class="header-flex">
-                    <h1 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
+                    <h1 style="font-family:'Orbitron'; color:var(--accent); font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
                     <div>
                         <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px;"></span>
                         <a href="/" class="nav-link">ANA SAYFA</a>
@@ -308,28 +340,28 @@ async def store_page():
                 <div class="grid" id="steamGrid"></div>
 
                 <div class="cart-box">
-                    <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
+                    <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
                     <div id="cartItems" style="margin-top:15px; color:#aaa;">Sepetiniz henüz boş.</div>
-                    <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:#4caf7d;"></div>
-                    <button class="btn" id="checkoutBtn" style="display:none; background:#4caf7d;" onclick="openCheckoutModal()">GÜVENLİ ÖDEME EKRANINI AÇ</button>
+                    <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:var(--success);"></div>
+                    <button class="btn" id="checkoutBtn" style="display:none; background:var(--success);" onclick="openCheckoutModal()">GÜVENLİ ÖDEME EKRANINI AÇ</button>
                 </div>
 
                 <div class="license-box" id="licenseSection" style="display:none;">
-                    <h2 style="font-family:'Orbitron'; color:#4caf7d; font-size:1.2rem;">🔑 SATIN ALINAN LİSANS ANAHTARLARINIZ</h2>
+                    <h2 style="font-family:'Orbitron'; color:var(--success); font-size:1.2rem;">🔑 SATIN ALINAN LİSANS ANAHTARLARINIZ</h2>
                     <div id="licenseList" style="margin-top:15px;"></div>
                 </div>
             </div>
 
             <div id="checkoutModal" class="modal">
                 <div class="modal-content">
-                    <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.1rem; margin-bottom:15px;">💳 KREDİ KARTI İLE ÖDEME</h2>
+                    <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:1.1rem; margin-bottom:15px;">💳 KREDİ KARTI İLE ÖDEME</h2>
                     <div id="modalError" style="color:#ff5555; font-size:0.85rem; margin-bottom:10px; display:none;"></div>
                     <input type="text" id="cardNumber" placeholder="Kart Numarası (örn: 4532 ... ... ...)" maxlength="16">
                     <div class="row">
                         <input type="text" id="cardExpiry" placeholder="AA/YY" maxlength="5">
                         <input type="password" id="cardCvv" placeholder="CVV" maxlength="3">
                     </div>
-                    <button class="btn" style="background:#4caf7d; margin-top:20px;" onclick="processCheckout()">ÖDEMEYİ ONAYLA VE TAMAMLA</button>
+                    <button class="btn" style="background:var(--success); margin-top:20px;" onclick="processCheckout()">ÖDEMEYİ ONAYLA VE TAMAMLA</button>
                     <button class="btn" style="background:#333; margin-top:10px;" onclick="closeCheckoutModal()">İPTAL</button>
                 </div>
             </div>
@@ -354,7 +386,7 @@ async def store_page():
                                 <div class="badge-family">AİLE PAYLAŞIMI</div>
                                 <h3 style="font-family:'Orbitron'; font-size: 1.2rem;">${acc.name}</h3>
                                 <p style="color:#aaa; margin-top:5px;">Kategori: ${acc.category}</p>
-                                <p style="color:#4caf7d; font-size:1.4rem; font-weight:bold; margin-top:10px;">$${acc.price}</p>
+                                <p style="color:var(--success); font-size:1.4rem; font-weight:bold; margin-top:10px;">$${acc.price}</p>
                                 <p style="color:#888; font-size:0.9rem;">Mevcut Stok: ${acc.stock} Slot</p>
                                 <button class="btn" onclick="addToCart(${acc.id})" ${acc.stock <= 0 ? 'disabled style="background:#444;cursor:not-allowed;"' : ''}>${acc.stock > 0 ? 'SEPETE EKLE' : 'STOK TÜKENDİ'}</button>
                             </div>
@@ -397,7 +429,7 @@ async def store_page():
                         licenseList.innerHTML = data.orders.map(o => `
                             <div style="background:#051109; border:1px solid #2d6a4f; padding:12px; margin-top:10px;">
                                 <div style="font-weight:bold; color:#fff;">${o.game_name}</div>
-                                <div style="font-family:monospace; color:#4caf7d; margin-top:5px; font-size:1.1rem;">Anahtar: ${o.key}</div>
+                                <div style="font-family:monospace; color:var(--success); margin-top:5px; font-size:1.1rem;">Anahtar: ${o.key}</div>
                                 <div style="font-size:0.8rem; color:#888; margin-top:3px;">Durum: ${o.status}</div>
                             </div>
                         `).join('');
@@ -437,7 +469,7 @@ async def store_page():
     </html>
     """
 
-# --- 3. YÖNETİCİ PANELİ (GÜVENLİ ROL KONTROLÜ İLE) ---
+# --- 3. YÖNETİCİ PANELİ (/admin-dashboard) ---
 @app.post("/api/admin/add-steam-account")
 async def add_steam_account(request: Request):
     data = await request.json()
@@ -579,7 +611,7 @@ async def admin_dashboard(request: Request):
                 .mgmt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
                 .mgmt-box { background: var(--surface); border: 1px solid var(--border); padding: 25px; }
                 input, select { padding: 10px; margin-top: 8px; width: 100%; background: var(--bg); color: #fff; border: 1px solid var(--border); font-family: inherit; }
-                .mgmt-btn { background: #3a86ff; color: #fff; border: none; padding: 10px; margin-top: 10px; width: 100%; font-family: 'Orbitron', monospace; font-weight: bold; cursor: pointer; }
+                .mgmt-btn { background: var(--accent); color: #fff; border: none; padding: 10px; margin-top: 10px; width: 100%; font-family: 'Orbitron', monospace; font-weight: bold; cursor: pointer; }
             </style>
         </head>
         <body>
@@ -625,14 +657,14 @@ async def admin_dashboard(request: Request):
                     <div class="panel-title" style="margin-bottom: 5px;">📊 CANLI SİSTEM ANALİZİ & OTONOM ONARIM</div>
                     <div class="analysis-grid">
                         <div class="analysis-card"><div class="analysis-label">CPU KULLANIMI</div><div class="analysis-val" id="cpuVal">Yükleniyor...</div></div>
-                        <div class="analysis-card"><div class="analysis-label">RAM TÜKETİMİ</div><div class="analysis-val" id="ramVal" style="color:#3a86ff;">Yükleniyor...</div></div>
+                        <div class="analysis-card"><div class="analysis-label">RAM TÜKETİMİ</div><div class="analysis-val" id="ramVal" style="color:var(--accent);">Yükleniyor...</div></div>
                         <div class="analysis-card"><div class="analysis-label">DİSK I/O</div><div class="analysis-val" id="diskVal" style="color:#00ff66;">Yükleniyor...</div></div>
                         <div class="analysis-card"><div class="analysis-label">AKTİF THREADLER</div><div class="analysis-val" id="threadVal">Yükleniyor...</div></div>
                     </div>
                     <div class="action-bar">
                         <button class="sys-btn" onclick="fetchSystemAnalysis()">🔄 METRİKLERİ YENİLE</button>
                         <button class="sys-btn danger" onclick="injectFault()">⚠️ SİSTEME HATA ENJEKTE ET</button>
-                        <button class="sys-btn" style="border-color:#3a86ff; color:#3a86ff;" onclick="askAiToHeal()">🤖 AI OTONOM ONARIM BAŞLAT</button>
+                        <button class="sys-btn" style="border-color:var(--accent); color:var(--accent);" onclick="askAiToHeal()">🤖 AI OTONOM ONARIM BAŞLAT</button>
                     </div>
                 </div>
 
@@ -668,7 +700,7 @@ async def admin_dashboard(request: Request):
                     </div>
 
                     <div class="mgmt-box">
-                        <h3 style="font-family:'Orbitron'; color:#3a86ff; font-size: 0.9rem;">🛡️ RÜTBE ATAMA YÖNETİMİ</h3>
+                        <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">🛡️ RÜTBE ATAMA YÖNETİMİ</h3>
                         <input type="text" id="targetEmail" placeholder="Kullanıcı E-postası">
                         <select id="targetRank">
                             <option value="Administrator">Administrator</option>
