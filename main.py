@@ -1,13 +1,9 @@
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 import os
 from groq import Groq
 
 app = FastAPI()
-
-templates = Jinja2Templates(directory="templates")
 
 # Örnek Kullanıcı ve Rol Veritabanı
 USERS_DB = [
@@ -19,7 +15,50 @@ USERS_DB = [
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    return templates.TemplateResponse(request, "index.html", {"request": request})
+    return """
+    <html>
+        <head>
+            <title>Interform Inc. | Giriş</title>
+            <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
+            <style>
+                body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .login-box { background: #111; border: 1px solid #262626; padding: 40px; width: 350px; display: flex; flex-direction: column; gap: 20px; }
+                h1 { font-family: 'Orbitron', monospace; font-size: 1.2rem; letter-spacing: 0.1em; color: #3a86ff; margin: 0; }
+                input { background: #070707; border: 1px solid #262626; padding: 12px; color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none; }
+                input:focus { border-color: #3a86ff; }
+                button { background: #3a86ff; color: #fff; border: none; padding: 12px; font-family: 'Orbitron', monospace; font-weight: 700; cursor: pointer; }
+                button:hover { opacity: 0.9; }
+                .error { color: #ff5555; font-size: 0.85rem; display: none; }
+            </style>
+        </head>
+        <body>
+            <div class="login-box">
+                <h1>// GİRİŞ YAP</h1>
+                <div class="error" id="errorMsg">Geçersiz kimlik bilgileri.</div>
+                <input type="email" id="email" placeholder="E-posta adresi">
+                <input type="password" id="password" placeholder="Şifre">
+                <button onclick="handleLogin()">BAĞLAN</button>
+            </div>
+            <script>
+                async function handleLogin() {
+                    const email = document.getElementById('email').value;
+                    const password = document.getElementById('password').value;
+                    const res = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const data = await res.json();
+                    if(res.ok) {
+                        window.location.href = data.redirect;
+                    } else {
+                        document.getElementById('errorMsg').style.display = 'block';
+                    }
+                }
+            </script>
+        </body>
+    </html>
+    """
 
 @app.post("/api/login")
 async def api_login(request: Request):
@@ -41,20 +80,17 @@ async def admin_ai_query(request: Request):
     api_key = os.environ.get("GROQ_API_KEY")
     
     if not api_key:
-        return {"response": "[SİSTEM UYARISI]: GROQ_API_KEY bulunamadı! Simüle Edilen AI Yanıtı: Rol izin matrisi güncellendi, yetki seviyeleri kararlı."}
+        return {"response": "[SİSTEM UYARISI]: GROQ_API_KEY çevre değişkeni bulunamadı! Simüle Edilen AI Yanıtı: Rol izin matrisi güncel ve kararlı."}
     
     try:
         client = Groq(api_key=api_key)
         chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "Sen Interform Inc. kurumsal yapay zeka asistanısın. Admin paneli için sistem analizi, güvenlik raporları ve rol yönetimi desteği sağlıyorsun."
-                },
-                {"role": "user", "content": prompt}
-            ],
             model="llama-3.3-70b-versatile",
-        }
+            messages=[
+                {"role": "system", "content": "Sen Interform Inc. kurumsal yapay zeka asistanısın."},
+                {"role": "user", "content": prompt}
+            ]
+        )
         return {"response": chat_completion.choices[0].message.content}
     except Exception as e:
         return {"response": f"AI Servis Hatası: {str(e)}"}
@@ -303,9 +339,7 @@ async def admin_dashboard():
     </html>
     """
     
-    # Yer tutucuyu dinamik kullanıcı listesiyle değiştir
-    final_html = html_content.replace("__USERS_HTML_PLACEHOLDER__", users_html)
-    return final_html
+    return html_content.replace("__USERS_HTML_PLACEHOLDER__", users_html)
 
 @app.get("/dashboard", response_class=HTMLResponse)
 async def user_dashboard():
