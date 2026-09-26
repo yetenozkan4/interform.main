@@ -3,8 +3,6 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
-# Groq kütüphanesini kullanıyorsan import edebilirsin, alternatif olarak request simülasyonu da yapabiliriz.
-# pip install groq
 from groq import Groq
 
 app = FastAPI()
@@ -54,7 +52,7 @@ async def admin_ai_query(request: Request):
                 }
             ],
             model="llama-3.3-70b-versatile",
-        }
+        )
         answer = chat_completion.choices[0].message.content
         return {"response": answer}
     except Exception as e:
