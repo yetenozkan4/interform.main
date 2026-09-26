@@ -8,27 +8,21 @@ app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-# --- SİSTEM VE ENJEKTÖR VERİTABANI SİMÜLASYONU ---
+# --- SİSTEM DURUMU ---
 SYSTEM_STATE = {
     "status": "STABİL",
-    "cpu": "18.4%",
-    "ram": "4.2 GB / 16 GB",
+    "cpu": "14.2%",
+    "ram": "3.8 GB / 16 GB",
     "active_threats": 0,
     "memory_leak_simulated": False
 }
 
-# Gündemdeki Popüler Oyunlar Enjektör Listesi
-INJECTORS = [
-    {"id": "cs2", "name": "Counter-Strike 2", "engine": "Source 2", "status": "UNDETECTED", "version": "v4.2.1", "downloads": 1420},
-    {"id": "valorant", "name": "Valorant (Vanguard Bypass)", "engine": "Unreal Engine 4/5", "status": "UNDETECTED", "version": "v2.8.4", "downloads": 3100},
-    {"id": "gta5", "name": "GTA V / FiveM", "engine": "RAGE Engine", "status": "UNDETECTED", "version": "v5.0.0", "downloads": 2450},
-    {"id": "apex", "name": "Apex Legends", "engine": "Source", "status": "UPDATING", "version": "v1.9.2", "downloads": 980},
-    {"id": "fortnite", "name": "Fortnite", "engine": "Unreal Engine 5", "status": "UNDETECTED", "version": "v3.1.0", "downloads": 1890}
-]
-
-# Kullanıcılardan gelen özel istek enjektörleri
-CUSTOM_REQUESTS = [
-    {"id": 1, "game": "Project Zomboid", "user": "agent_47@interform.inc", "status": "İşleme Alındı", "priority": "Orta"}
+# Steam Aile Paylaşımı / Çevrimdışı Hesap Mağaza Envanteri
+STEAM_ACCOUNTS = [
+    {"id": 1, "name": "Red Dead Redemption 2 (Steam Çevrimdışı/Aile)", "price": 59.99, "category": "AAA Oyun", "stock": 8, "type": "Steam Aile Paylaşımı"},
+    {"id": 2, "name": "Grand Theft Auto V (Enhanced Edition)", "price": 39.99, "category": "AAA Oyun", "stock": 15, "type": "Steam Aile Paylaşımı"},
+    {"id": 3, "name": "RV There Yet? (Co-Op / Indie)", "price": 19.99, "category": "İndie", "stock": 22, "type": "Steam Aile Paylaşımı"},
+    {"id": 4, "name": "Cyberpunk 2077 + Phantom Liberty", "price": 89.99, "category": "AAA Oyun", "stock": 5, "type": "Steam Aile Paylaşımı"}
 ]
 
 RANKS = [
@@ -51,12 +45,6 @@ USERS = {
         "name": "Sistem Admin"
     }
 }
-
-PRODUCTS = [
-    {"id": 1, "name": "Cyberpunk Neural Link v1", "price": 299.99, "category": "Donanım", "stock": 14},
-    {"id": 2, "name": "Quantum Encryption Key", "price": 149.50, "category": "Yazılım", "stock": 42},
-    {"id": 3, "name": "AI Sentinel Core", "price": 599.00, "category": "AI Modülü", "stock": 5}
-]
 
 # --- ANA SAYFA ---
 @app.get("/", response_class=HTMLResponse)
@@ -96,42 +84,24 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- ENJEKTÖR YÖNETİM ENDPOINTLERİ ---
-@app.get("/api/injectors")
-async def get_injectors():
-    return {"injectors": INJECTORS, "requests": CUSTOM_REQUESTS}
+# --- STEAM HESAP MAĞAZA ENDPOINTLERİ ---
+@app.get("/api/steam-accounts")
+async def get_steam_accounts():
+    return {"accounts": STEAM_ACCOUNTS}
 
-@app.post("/api/admin/add-injector")
-async def add_injector(request: Request):
+@app.post("/api/admin/add-steam-account")
+async def add_steam_account(request: Request):
     data = await request.json()
-    new_id = data.get("id", "custom_game")
-    INJECTORS.append({
+    new_id = len(STEAM_ACCOUNTS) + 1
+    STEAM_ACCOUNTS.append({
         "id": new_id,
         "name": data.get("name"),
-        "engine": data.get("engine", "Custom"),
-        "status": "UNDETECTED",
-        "version": data.get("version", "v1.0.0"),
-        "downloads": 0
+        "price": float(data.get("price", 0)),
+        "category": data.get("category", "AAA Oyun"),
+        "stock": int(data.get("stock", 5)),
+        "type": "Steam Aile Paylaşımı (Güvenli Kilitli)"
     })
-    return {"status": "success", "message": f"{data.get('name')} için enjektör modülü sisteme eklendi."}
-
-@app.post("/api/user/request-injector")
-async def request_injector(request: Request):
-    data = await request.json()
-    game_name = data.get("game", "").strip()
-    email = data.get("email", "misafir@interform.inc")
-    
-    if not game_name:
-        raise HTTPException(status_code=400, detail="Oyun adı boş olamaz.")
-        
-    CUSTOM_REQUESTS.append({
-        "id": len(CUSTOM_REQUESTS) + 1,
-        "game": game_name,
-        "user": email,
-        "status": "İnceleniyor (Sırada)",
-        "priority": "Özel İstek"
-    })
-    return {"status": "success", "message": f"'{game_name}' için özel enjektör talebiniz sıraya alındı."}
+    return {"status": "success", "message": "Steam aile hesabı envantere eklendi."}
 
 # --- SİSTEM ANALİZİ VE OTONOM TETİKLEYİCİ API ---
 @app.get("/api/admin/system-analysis")
@@ -139,9 +109,9 @@ async def get_system_analysis():
     return {
         "cpu_usage": SYSTEM_STATE["cpu"],
         "ram_usage": SYSTEM_STATE["ram"],
-        "disk_io": "1.2 MB/s",
-        "active_threads": 48,
-        "network_traffic": "450 KB/s",
+        "disk_io": "0.8 MB/s",
+        "active_threads": 42,
+        "network_traffic": "320 KB/s",
         "database_status": SYSTEM_STATE["status"],
         "security_threats": SYSTEM_STATE["active_threats"],
         "ai_status": "Active (Qwen-3.8-27b Self-Healing Enabled)"
@@ -149,12 +119,12 @@ async def get_system_analysis():
 
 @app.post("/api/admin/inject-fault")
 async def inject_fault():
-    SYSTEM_STATE["status"] = "KRİTİK UYARI (Bellek Sızıntısı)"
-    SYSTEM_STATE["cpu"] = "%94.2 (Aşırı Yük)"
-    SYSTEM_STATE["ram"] = "15.1 GB / 16 GB"
-    SYSTEM_STATE["active_threats"] = 2
+    SYSTEM_STATE["status"] = "KRİTİK UYARI (Hesap Havuzu Senkronizasyon Hatası)"
+    SYSTEM_STATE["cpu"] = "%88.5 (Aşırı İstek)"
+    SYSTEM_STATE["ram"] = "14.2 GB / 16 GB"
+    SYSTEM_STATE["active_threats"] = 1
     SYSTEM_STATE["memory_leak_simulated"] = True
-    return {"status": "success", "message": "Sisteme simüle edilmiş bellek sızıntısı ve performans darboğazı enjekte edildi."}
+    return {"status": "success", "message": "Sisteme simüle edilmiş veritabanı / hesap senkronizasyon hatası enjekte edildi."}
 
 # --- TAM YETKİLİ VE OTONOM AI ENDPOINTİ ---
 @app.post("/api/ai-query")
@@ -166,13 +136,13 @@ async def ai_query(request: Request):
     if "onar" in prompt or "fix" in prompt or "çöz" in prompt or "optimize" in prompt or "temizle" in prompt:
         if SYSTEM_STATE["memory_leak_simulated"] or SYSTEM_STATE["active_threats"] > 0 or "KRİTİK" in SYSTEM_STATE["status"]:
             SYSTEM_STATE["status"] = "STABİL"
-            SYSTEM_STATE["cpu"] = "19.1%"
-            SYSTEM_STATE["ram"] = "4.4 GB / 16 GB"
+            SYSTEM_STATE["cpu"] = "14.2%"
+            SYSTEM_STATE["ram"] = "3.8 GB / 16 GB"
             SYSTEM_STATE["active_threats"] = 0
             SYSTEM_STATE["memory_leak_simulated"] = False
-            action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği bellek sızıntısını izole etti, önbelleği temizledi ve sistem kararlılığını geri getirdi."
+            action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği Steam hesap havuzu veritabanını senkronize etti, kilit mekanizmalarını yeniledi ve sistemi stabil hale getirdi."
         else:
-            action_taken = "\n\n[OTONOM BİLGİ]: Sistem halihazırda tamamen stabil çalışıyor."
+            action_taken = "\n\n[OTONOM BİLGİ]: Hesap havuzu ve sistem tamamen stabil çalışıyor."
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -181,7 +151,7 @@ async def ai_query(request: Request):
     try:
         client = Groq(api_key=api_key)
         system_context = f"""
-        Sen Interform Inc.'in tam yetkili, otonom başmühendis ve hile/enjektör operasyonları sorumlusu yapay zeka asistanısın (Model: Qwen-3.8-27b).
+        Sen Interform Inc.'in tam yetkili, otonom başmühendis ve Steam Aile Paylaşımı / Lisans yöneticisi yapay zeka asistanısın (Model: Qwen-3.8-27b).
         Şu anki Anlık Sistem Durumu:
         - Durum: {SYSTEM_STATE['status']}
         - CPU: {SYSTEM_STATE['cpu']}
@@ -199,66 +169,51 @@ async def ai_query(request: Request):
     except Exception as e:
         return {"response": f"AI Servis Hatası: {str(e)}{action_taken}"}
 
-# --- MAĞAZA SAYFASI ---
+# --- STEAM MAĞAZA SAYFASI ---
 @app.get("/store", response_class=HTMLResponse)
 async def store_page():
     return """
     <html>
         <head>
-            <title>Interform Inc. | Mağaza & Enjektör Portali</title>
+            <title>Interform Inc. | Steam Aile Paylaşımı Mağazası</title>
             <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
             <style>
                 body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; padding: 40px; }
                 .container { max-width: 1100px; margin: 0 auto; }
-                .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
-                .card { background: #111; border: 1px solid #262626; padding: 20px; }
-                .btn { background: #ff007f; color: #fff; border: none; padding: 10px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; width: 100%; }
-                .request-box { background: #111; border: 1px solid #262626; padding: 25px; margin-top: 40px; }
-                input { width: 100%; padding: 10px; background: #070707; border: 1px solid #262626; color: #fff; margin-top: 10px; font-family: inherit; }
+                .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 30px; }
+                .card { background: #111; border: 1px solid #262626; padding: 25px; position: relative; }
+                .badge-family { position: absolute; top: 20px; right: 20px; background: rgba(58,134,255,0.15); border: 1px solid #3a86ff; color: #3a86ff; padding: 4px 10px; font-size: 0.7rem; font-family: 'Orbitron'; }
+                .btn { background: #3a86ff; color: #fff; border: none; padding: 12px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; }
+                .warning-note { background: #1a1a1a; border-left: 3px solid #ffaa00; padding: 15px; margin-top: 30px; font-size: 0.95rem; color: #ccc; }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1 style="font-family:'Orbitron'; color:#ff007f;">// OYUN ENJEKTÖRLERİ & MAĞAZA</h1>
+                <h1 style="font-family:'Orbitron'; color:#3a86ff;">// STEAM AİLE PAYLAŞIMI & ÇEVRİMİÇİ LİSANSLAR</h1>
                 <a href="/admin-dashboard" style="color:#aaa; text-decoration:none;">&larr; Yönetim Paneli</a>
                 
-                <h2 style="font-family:'Orbitron'; margin-top:30px; font-size:1.1rem; color:#4caf7d;">Aktif Oyun Modülleri</h2>
-                <div class="grid" id="injectorGrid"></div>
-
-                <div class="request-box">
-                    <h3 style="font-family:'Orbitron'; color:#3a86ff; font-size:1rem;">🎯 ÖZEL OYUN / ENJEKTÖR İSTEĞİ</h3>
-                    <p style="color:#aaa; font-size:0.9rem; margin-top:5px;">Listede olmayan küçük çaplı veya indie bir oyun için enjektör talebinde bulunun.</p>
-                    <input type="text" id="reqGame" placeholder="İstediğiniz Oyunun Adı (örn: Lethal Company)">
-                    <button class="btn" style="background:#3a86ff;" onclick="submitRequest()">ÖZEL TALEP OLUŞTUR</button>
+                <div class="warning-note">
+                    <b>⚠️ Güvenlik Protkolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilmektedir. E-posta ve şifre değiştirmek kesinlikle yasaktır ve sistem tarafından otomatik olarak engellenir. Çevrimdışı modda sorunsuz oynayabilirsiniz.
                 </div>
+
+                <div class="grid" id="steamGrid"></div>
             </div>
             <script>
-                fetch('/api/injectors').then(res => res.json()).then(data => {
-                    const grid = document.getElementById('injectorGrid');
-                    data.injectors.forEach(inj => {
+                fetch('/api/steam-accounts').then(res => res.json()).then(data => {
+                    const grid = document.getElementById('steamGrid');
+                    data.accounts.forEach(acc => {
                         grid.innerHTML += `
                             <div class="card">
-                                <h3 style="font-family:'Orbitron';">${inj.name}</h3>
-                                <p style="color:#aaa;">Motor: ${inj.engine}</p>
-                                <p style="color:#aaa;">Sürüm: ${inj.version}</p>
-                                <p style="color:#4caf7d; font-weight:bold; margin-top:10px;">DURUM: ${inj.status}</p>
-                                <button class="btn" onclick="alert('${inj.name} enjektör paketi indiriliyor...')">İNDİR / ENJEKTE ET</button>
+                                <div class="badge-family">AİLE PAYLAŞIMI</div>
+                                <h3 style="font-family:'Orbitron'; font-size: 1.2rem;">${acc.name}</h3>
+                                <p style="color:#aaa; margin-top:5px;">Kategori: ${acc.category}</p>
+                                <p style="color:#4caf7d; font-size:1.4rem; font-weight:bold; margin-top:10px;">$${acc.price}</p>
+                                <p style="color:#888; font-size:0.9rem;">Mevcut Stok: ${acc.stock} Slot</p>
+                                <button class="btn" onclick="alert('${acc.name} için aile paylaşım slotu ayrıldı! Bilgiler panelinize gönderildi.')">HEMEN SATIN AL / ERİŞ</button>
                             </div>
                         `;
                     });
                 });
-
-                async function submitRequest() {
-                    const game = document.getElementById('reqGame').value;
-                    const res = await fetch('/api/user/request-injector', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({game})
-                    });
-                    const data = await res.json();
-                    alert(data.message);
-                    document.getElementById('reqGame').value = '';
-                }
             </script>
         </body>
     </html>
@@ -278,14 +233,14 @@ async def user_dashboard():
                 .chat { background: #000; height: 300px; border: 1px solid #262626; padding: 15px; overflow-y: auto; margin-top: 15px; }
                 input, button { padding: 10px; font-family: inherit; }
                 input { width: 75%; background: #000; color: #fff; border: 1px solid #262626; }
-                button { width: 22%; background: #ff007f; color: #fff; border: none; cursor: pointer; font-family: 'Orbitron'; }
+                button { width: 22%; background: #3a86ff; color: #fff; border: none; cursor: pointer; font-family: 'Orbitron'; }
             </style>
         </head>
         <body>
             <div class="box">
-                <h1 style="font-family:'Orbitron'; color:#ff007f;">// KULLANICI & AI PORTALI</h1>
-                <p>Hoş geldiniz. Enjektörler için mağazayı ziyaret edebilir veya AI asistanından destek alabilirsiniz.</p>
-                <a href="/store" style="color:#ff007f;">Enjektör Mağazasına Git</a> | <a href="/" style="color:#aaa;">Çıkış Yap</a>
+                <h1 style="font-family:'Orbitron'; color:#3a86ff;">// KULLANICI & AI PORTALI</h1>
+                <p>Hoş geldiniz. Steam aile hesabı satın almak için mağazayı ziyaret edebilir veya AI başmühendisten destek alabilirsiniz.</p>
+                <a href="/store" style="color:#3a86ff;">Steam Mağazasına Git</a> | <a href="/" style="color:#aaa;">Çıkış Yap</a>
                 
                 <h3 style="font-family:'Orbitron'; margin-top:20px;">🤖 Qwen AI Asistanı</h3>
                 <div class="chat" id="chatBox"><div style="color:#888;">AI Başmühendis hazır. Sorunuzu yazın...</div></div>
@@ -307,7 +262,7 @@ async def user_dashboard():
                         body: JSON.stringify({prompt: p})
                     });
                     const data = await res.json();
-                    box.innerHTML += `<div style="color:#ff007f; margin-top:5px;"><b>AI:</b> ${data.response}</div>`;
+                    box.innerHTML += `<div style="color:#3a86ff; margin-top:5px;"><b>AI:</b> ${data.response}</div>`;
                     box.scrollTop = box.scrollHeight;
                 }
             </script>
@@ -331,7 +286,7 @@ async def admin_dashboard():
                     --border: #262626;
                     --primary: #ffffff;
                     --secondary: #999999;
-                    --accent: #ff007f;
+                    --accent: #3a86ff;
                     --success: #4caf7d;
                     --warning: #ffaa00;
                 }
@@ -343,7 +298,7 @@ async def admin_dashboard():
                 .admin-logo { font-family: 'Orbitron', monospace; font-size: 1.3rem; font-weight: 900; letter-spacing: 0.2em; color: var(--primary); }
                 .admin-logo span { color: var(--accent); }
                 .admin-nav { display: flex; gap: 15px; align-items: center; }
-                .badge { background: rgba(255,0,127,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; font-family: 'Orbitron', monospace; font-size: 0.7rem; letter-spacing: 0.1em; }
+                .badge { background: rgba(58,134,255,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 6px 14px; font-family: 'Orbitron', monospace; font-size: 0.7rem; letter-spacing: 0.1em; }
                 .logout-btn { border: 1px solid var(--border); background: var(--surface); color: var(--secondary); padding: 8px 18px; font-family: 'Orbitron', monospace; font-size: 0.75rem; text-decoration: none; transition: 0.2s; }
                 .logout-btn:hover { border-color: var(--primary); color: var(--primary); }
 
@@ -362,7 +317,7 @@ async def admin_dashboard():
                 .action-bar { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
                 .sys-btn { background: var(--surface-light); border: 1px solid var(--border); color: #fff; padding: 8px 15px; font-family: 'Orbitron'; font-size: 0.75rem; cursor: pointer; transition: 0.2s; }
                 .sys-btn:hover { border-color: var(--accent); color: var(--accent); }
-                .sys-btn.danger { border-color: rgba(255,0,127,0.4); color: var(--accent); }
+                .sys-btn.danger { border-color: rgba(255,0,127,0.4); color: #ff007f; }
 
                 .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
                 .panel-card { background: var(--surface); border: 1px solid var(--border); padding: 25px; display: flex; flex-direction: column; height: 480px; }
@@ -371,7 +326,7 @@ async def admin_dashboard():
                 .ai-chat-box { flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; font-size: 0.95rem; }
                 .ai-msg { padding: 10px 14px; border-radius: 2px; max-width: 85%; line-height: 1.5; white-space: pre-wrap; }
                 .ai-msg.system { background: var(--surface-light); border-left: 3px solid var(--accent); color: var(--primary); align-self: flex-start; }
-                .ai-msg.user { background: rgba(255,0,127,0.15); border-right: 3px solid var(--accent); color: var(--primary); align-self: flex-end; }
+                .ai-msg.user { background: rgba(58,134,255,0.15); border-right: 3px solid var(--accent); color: var(--primary); align-self: flex-end; }
                 
                 .ai-input-group { display: flex; gap: 10px; }
                 .ai-input { flex: 1; background: var(--bg); border: 1px solid var(--border); padding: 10px; color: var(--primary); font-family: 'Rajdhani', sans-serif; font-size: 1rem; outline: none; }
@@ -388,10 +343,10 @@ async def admin_dashboard():
         <body>
             <div class="admin-container">
                 <div class="admin-header">
-                    <div class="admin-logo">INTERFORM<span>.INC</span> // ENJEKTÖR & SİSTEM YÖNETİMİ</div>
+                    <div class="admin-logo">INTERFORM<span>.INC</span> // STEAM LİSANS YÖNETİMİ</div>
                     <div class="admin-nav">
                         <div class="badge">SELF-HEALING AI AKTİF</div>
-                        <a href="/store" class="logout-btn">ENJEKTÖR MAĞAZASI</a>
+                        <a href="/store" class="logout-btn">STEAM MAĞAZA</a>
                         <a href="/" class="logout-btn">ÇIKIŞ</a>
                     </div>
                 </div>
@@ -406,8 +361,8 @@ async def admin_dashboard():
                         <div class="stat-value" style="color:var(--accent); font-size: 1.1rem; margin-top: 5px;">Qwen-3.8-27b</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-title">AKTİF OTURUMLAR</div>
-                        <div class="stat-value">1,429</div>
+                        <div class="stat-title">AKTİF HESAP HAVUZU</div>
+                        <div class="stat-value">50 Slot</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-title">GÜVENLİK DUVARI</div>
@@ -436,7 +391,7 @@ async def admin_dashboard():
                     <div class="panel-card">
                         <div class="panel-title">🤖 TAM YETKİLİ YAPAY ZEKA SİSTEM ANALİZİ</div>
                         <div class="ai-chat-box" id="chatBox">
-                            <div class="ai-msg system">Otonom AI Başmühendis hazır. "Sistemi tara ve onar" komutuyla arka plandaki tüm anormallikleri özerk bir şekilde giderebilirim.</div>
+                            <div class="ai-msg system">Otonom AI Başmühendis hazır. "Sistemi tara ve onar" komutuyla havuzdaki senkronizasyon sorunlarını giderebilirim.</div>
                         </div>
                         <div class="ai-input-group">
                             <input type="text" id="aiPrompt" class="ai-input" placeholder="Sistem analizi veya onarım iste..." onkeypress="checkEnter(event)">
@@ -449,20 +404,20 @@ async def admin_dashboard():
                         <div class="logs-container" id="logsContainer">
                             <div class="log-line">[22:00:01] [INFO] FastAPI sunucu başarıyla başlatıldı.</div>
                             <div class="log-line">[22:00:05] [AUTH] admin@interform.inc root yetkisiyle bağlandı.</div>
-                            <div class="log-line">[22:00:12] [INJECTOR_CORE] Popüler oyun modülleri yüklendi.</div>
-                            <div class="log-line">[22:00:20] [SECURITY] Vanguard ve BattlEye bypass simülasyonu aktif.</div>
+                            <div class="log-line">[22:00:12] [STEAM_CORE] Aile paylaşım havuzu yüklendi.</div>
+                            <div class="log-line">[22:00:20] [SECURITY] E-posta/Şifre koruma kilidi aktif.</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mgmt-grid">
                     <div class="mgmt-box">
-                        <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">🎯 YENİ ENJEKTÖR MODÜLÜ EKLE</h3>
-                        <input type="text" id="injId" placeholder="ID (örn: pubg)">
-                        <input type="text" id="injName" placeholder="Oyun Adı">
-                        <input type="text" id="injEngine" placeholder="Oyun Motoru (Unreal vb.)">
-                        <input type="text" id="injVersion" placeholder="Sürüm (v1.0.0)">
-                        <button class="mgmt-btn" onclick="addInjectorModule()">ENJEKTÖRÜ SİSTEME EKLE</button>
+                        <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">📦 YENİ STEAM OYUNU / HESABI EKLE</h3>
+                        <input type="text" id="sName" placeholder="Oyun Adı (örn: RDR2 Aile Hesabı)">
+                        <input type="number" id="sPrice" placeholder="Fiyat ($)">
+                        <input type="text" id="sCategory" placeholder="Kategori (AAA Oyun vb.)">
+                        <input type="number" id="sStock" placeholder="Stok / Slot Adedi">
+                        <button class="mgmt-btn" onclick="addSteamAccount()">STEAM HESABINI KAYDET</button>
                     </div>
 
                     <div class="mgmt-box">
@@ -525,14 +480,14 @@ async def admin_dashboard():
                     alert(data.message);
                     
                     const logs = document.getElementById('logsContainer');
-                    logs.innerHTML += `<div class="log-line" style="color:#ffaa00;">[WARNING] Simüle edilmiş bellek sızıntısı ve performans düşüşü algılandı!</div>`;
+                    logs.innerHTML += `<div class="log-line" style="color:#ffaa00;">[WARNING] Simüle edilmiş hesap senkronizasyon hatası algılandı!</div>`;
                     logs.scrollTop = logs.scrollHeight;
                     fetchSystemAnalysis();
                 }
 
                 function askAiToHeal() {
                     const inputField = document.getElementById('aiPrompt');
-                    inputField.value = "Sistemi tara, tespit edilen tüm bellek sızıntılarını ve açıkları kendi kendine onar.";
+                    inputField.value = "Sistemi tara, tespit edilen tüm hesap senkronizasyon açıklarını ve hataları onar.";
                     sendAiQuery();
                 }
 
@@ -561,7 +516,7 @@ async def admin_dashboard():
                         chatBox.innerHTML += `<div class="ai-msg system">${escapeHtml(data.response)}</div>`;
                         
                         const logs = document.getElementById('logsContainer');
-                        logs.innerHTML += `<div class="log-line" style="color:#00ff66;">[AI_HEAL] Otonom onarım ve optimizasyon döngüsü uygulandı.</div>`;
+                        logs.innerHTML += `<div class="log-line" style="color:#00ff66;">[AI_HEAL] Otonom hesap onarım ve optimizasyon döngüsü uygulandı.</div>`;
                         logs.scrollTop = logs.scrollHeight;
 
                         fetchSystemAnalysis();
@@ -575,16 +530,16 @@ async def admin_dashboard():
                 function checkEnter(e) { if (e.key === 'Enter') { sendAiQuery(); } }
                 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-                async function addInjectorModule() {
-                    const id = document.getElementById('injId').value;
-                    const name = document.getElementById('injName').value;
-                    const engine = document.getElementById('injEngine').value;
-                    const version = document.getElementById('injVersion').value;
+                async function addSteamAccount() {
+                    const name = document.getElementById('sName').value;
+                    const price = document.getElementById('sPrice').value;
+                    const category = document.getElementById('sCategory').value;
+                    const stock = document.getElementById('sStock').value;
                     
-                    const res = await fetch('/api/admin/add-injector', {
+                    const res = await fetch('/api/admin/add-steam-account', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({id, name, engine, version})
+                        body: JSON.stringify({name, price, category, stock})
                     });
                     const data = await res.json();
                     alert(data.message);
