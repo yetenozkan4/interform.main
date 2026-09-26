@@ -97,6 +97,7 @@
   .form-input:focus { border-color: var(--primary); }
   .modal-btn { width: 100%; background: var(--primary); color: #000; border: none; padding: 14px; font-family: 'Orbitron', monospace; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.15em; cursor: pointer; transition: opacity 0.2s; margin-top: 10px; }
   .modal-btn:hover { opacity: 0.9; }
+  #error-msg { color: #ff5555; font-size: 0.85rem; margin-top: 10px; display: none; }
 
   /* Footer */
   .footer { background: var(--surface); border-top: 1px solid var(--border); padding: 80px 60px 40px 60px; }
@@ -108,7 +109,6 @@
   .footer-links a:hover { color: var(--primary); }
   .footer-bottom { max-width: 1300px; margin: 0 auto; border-top: 1px solid var(--border); padding-top: 30px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: var(--secondary); font-family: 'Orbitron', monospace; letter-spacing: 0.1em; }
 
-  /* Responsive Design */
   @media(max-width: 1024px) {
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
     .stat-item:nth-child(2) { border-right: none; }
@@ -202,15 +202,13 @@
     </div>
   </div>
 
-  <!-- About / Company Section -->
+  <!-- About Section -->
   <section class="section" id="about">
     <div class="about-grid">
       <div class="about-content">
         <div class="section-subtitle" style="text-align: left; margin-bottom: 10px;">KURUMSAL VİZYON</div>
         <h3>Yenilikçi Mühendislik Yaklaşımı İle Sektöre Yön Veriyoruz</h3>
         <p>Interform Inc. olarak amacımız, en karmaşık kurumsal problemleri dahi minimalist, hızlı ve sürdürülebilir teknolojik çözümlerle çözmektir. Uzman kadromuz ve güçlü Ar-Ge ekibimizle geleceğin dijital dünyasını tasarlıyoruz.</p>
-        <p>Her ölçekteki işletmenin dijital olgunluk seviyesini artırmak için özel olarak geliştirilmiş yazılım ekosistemimiz, esnek yapısıyla tüm operasyonel ihtiyaçlarınıza anında uyum sağlar.</p>
-        
         <div class="about-features">
           <div class="about-feature-item"><span>01.</span> Yüksek Performanslı ve Hızlı Kod Tabanı</div>
           <div class="about-feature-item"><span>02.</span> ISO ve Uluslararası Güvenlik Sertifikaları</div>
@@ -220,7 +218,7 @@
       
       <div class="about-box" id="technology">
         <div class="tech-stack-title">// KULLANILAN TEKNOLOJİLER & STACK</div>
-        <p style="font-size: 0.95rem; color: var(--secondary);">Sistemlerimizin arkasındaki modern ve kararlı teknoloji yığını:</p>
+        <p style="font-size: 0.95rem; color: var(--secondary);">Sistemlerimizin arkasındaki modern teknoloji yığını:</p>
         <div class="tech-tags">
           <span class="tech-tag">FASTAPI</span>
           <span class="tech-tag">PYTHON 3.12</span>
@@ -228,8 +226,6 @@
           <span class="tech-tag">DOCKER</span>
           <span class="tech-tag">REDIS</span>
           <span class="tech-tag">POSTGRESQL</span>
-          <span class="tech-tag">MODERN JS</span>
-          <span class="tech-tag">LINUX KERNEL</span>
         </div>
         <div style="border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px;">
           <p style="font-size: 0.9rem; color: var(--primary); font-family: 'Orbitron', monospace; letter-spacing: 0.05em;">SİSTEM DURUMU: <span style="color: #4caf7d;">TÜM SERVİSLER AKTİF</span></p>
@@ -257,12 +253,13 @@
       <form onsubmit="handleLogin(event)">
         <div class="form-group">
           <label class="form-label">KURUMSAL E-POSTA</label>
-          <input type="email" class="form-input" placeholder="ornek@interform.inc" required>
+          <input type="email" id="login-email" class="form-input" placeholder="admin@interform.inc" required>
         </div>
         <div class="form-group">
           <label class="form-label">ŞİFRE</label>
-          <input type="password" class="form-input" placeholder="••••••••" required>
+          <input type="password" id="login-pass" class="form-input" placeholder="••••••••" required>
         </div>
+        <div id="error-msg">Geçersiz e-posta veya şifre.</div>
         <button type="submit" class="modal-btn">SİSTEME BAĞLAN</button>
       </form>
     </div>
@@ -281,7 +278,6 @@
           <a href="#solutions">Yapay Zeka</a>
           <a href="#solutions">Bulut Altyapı</a>
           <a href="#solutions">Veri Güvenliği</a>
-          <a href="#solutions">Kurumsal Entegrasyon</a>
         </div>
       </div>
       <div class="footer-col">
@@ -290,7 +286,6 @@
           <a href="#about">Hakkımızda</a>
           <a href="#technology">Teknoloji Stack</a>
           <a href="#contact">Kariyer</a>
-          <a href="#contact">Basın Odası</a>
         </div>
       </div>
       <div class="footer-col">
@@ -298,7 +293,6 @@
         <div class="footer-links">
           <a href="#">Gizlilik Politikası</a>
           <a href="#">Kullanım Şartları</a>
-          <a href="#">KVKK Aydınlatma Metni</a>
         </div>
       </div>
     </div>
@@ -314,13 +308,31 @@
     }
     function closeLoginModal() {
       document.getElementById('loginModal').style.display = 'none';
+      document.getElementById('error-msg').style.display = 'none';
     }
-    function handleLogin(e) {
+    async function handleLogin(e) {
       e.preventDefault();
-      alert('Kimlik doğrulama simülasyonu başarılı. Sistem güvenli bağlantı sağlıyor.');
-      closeLoginModal();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-pass').value;
+      const errorDiv = document.getElementById('error-msg');
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.redirect) {
+          window.location.href = data.redirect;
+        } else {
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.style.display = 'block';
+      }
     }
-    // Mod dışına tıklandığında kapanması için
     window.onclick = function(event) {
       const modal = document.getElementById('loginModal');
       if (event.target === modal) {
