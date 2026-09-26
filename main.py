@@ -5,14 +5,13 @@ from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-# Statik dosyalar ve şablonlar (Varsa dizin yapına göre ayarlayabilirsin)
+# Statik dosyalar ve şablonlar
 # app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
-    # templates/index.html dosyasını render eder
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html", {"request": request})
 
 @app.post("/api/login")
 async def api_login(request: Request):
@@ -44,7 +43,7 @@ async def admin_dashboard():
                     <p style="margin-bottom: 10px; color:#999;">Sistem Durumu: <span style="color:#4caf7d;">Aktif & Çalışıyor</span></p>
                     <p style="color:#999;">AI Entegrasyonu: <span style="color:#3a86ff;">GroQ API Bağlı</span></p>
                 </div>
-                <a href="/" style="display:inline-block; margin-top:30px; padding:12px 24px; background:#fff; color:#000; text-decoration:none; font-family:'Orbitron'; font-size:0.8rem; font-weight:700; transition: opacity 0.2s;">ANA SAYFAYA DÖN</a>
+                <a href="/" style="display:inline-block; margin-top:30px; padding:12px 24px; background:#fff; color:#000; text-decoration:none; font-family:'Orbitron'; font-size:0.8rem; font-weight:700;">ANA SAYFAYA DÖN</a>
             </div>
         </body>
     </html>
