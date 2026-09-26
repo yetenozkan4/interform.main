@@ -51,7 +51,7 @@ async def admin_ai_query(request: Request):
                     "content": prompt
                 }
             ],
-            model="llama-3.3-70b-versatile",
+            model="llama-3.1-8b-instant",
         )
         answer = chat_completion.choices[0].message.content
         return {"response": answer}
@@ -142,7 +142,7 @@ async def admin_dashboard():
                     </div>
                     <div class="stat-box">
                         <div class="stat-title">YAPAY ZEKA MODELİ</div>
-                        <div class="stat-value" style="font-size: 1.2rem; margin-top: 5px; color: var(--accent);">Llama-3.3-70b</div>
+                        <div class="stat-value" style="font-size: 1.2rem; margin-top: 5px; color: var(--accent);">Llama-3.1-8b</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-title">AKTİF OTURUMLAR</div>
