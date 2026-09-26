@@ -25,21 +25,9 @@ STEAM_ACCOUNTS = [
     {"id": 4, "name": "Cyberpunk 2077 + Phantom Liberty", "price": 89.99, "category": "AAA Oyun", "stock": 5, "type": "Steam Aile Paylaşımı"}
 ]
 
-# Kullanıcı Sepetleri Bellek Havuzu
+# Bellek Havuzları
 USER_CARTS = {}
-
-RANKS = [
-    "Administrator",
-    "Yönetim Kurulu",
-    "BT Genel Sorumlu",
-    "Mağaza Genel Sorumlu",
-    "Mağaza Yetkilisi",
-    "BT Yetkilisi",
-    "Genel Yetkili",
-    "Yetkili",
-    "Stajyer",
-    "Üye"
-]
+USER_ORDERS = {} # Satın alınan lisanslar burada saklanacak
 
 USERS = {
     "admin@interform.inc": {
@@ -94,7 +82,7 @@ async def read_index(request: Request):
                 }
 
                 async function handleAuth() {
-                    const email = document.getElementById('email').value;
+                    const email = document.getElementById('email').value.trim().toLowerCase();
                     const password = document.getElementById('password').value;
                     const name = document.getElementById('name').value;
                     const errorBox = document.getElementById('errorMsg');
@@ -128,7 +116,6 @@ async def read_index(request: Request):
     </html>
     """
 
-# --- API: KAYIT & GİRİŞ ---
 @app.post("/api/register")
 async def api_register(request: Request):
     data = await request.json()
@@ -161,7 +148,7 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- SEPET VE MAĞAZA ENDPOINTLERİ ---
+# --- MAĞAZA VE SEPET API'LERİ ---
 @app.get("/api/steam-accounts")
 async def get_steam_accounts():
     return {"accounts": STEAM_ACCOUNTS}
@@ -169,12 +156,14 @@ async def get_steam_accounts():
 @app.post("/api/cart/add")
 async def add_to_cart(request: Request):
     data = await request.json()
-    email = data.get("email", "guest@interform.inc")
+    email = data.get("email", "guest@interform.inc").strip().lower()
     game_id = data.get("id")
 
     game = next((g for g in STEAM_ACCOUNTS if g["id"] == game_id), None)
     if not game:
         raise HTTPException(status_code=404, detail="Oyun bulunamadı.")
+    if game["stock"] <= 0:
+        raise HTTPException(status_code=400, detail="Üzgünüz, bu oyunun stokları tükendi.")
 
     if email not in USER_CARTS:
         USER_CARTS[email] = []
@@ -184,25 +173,49 @@ async def add_to_cart(request: Request):
 
 @app.get("/api/cart/{email}")
 async def get_cart(email: str):
+    email = email.strip().lower()
     items = USER_CARTS.get(email, [])
     total = sum(item["price"] for item in items)
-    return {"items": items, "total": round(total, 2)}
+    orders = USER_ORDERS.get(email, [])
+    return {"items": items, "total": round(total, 2), "orders": orders}
 
 @app.post("/api/checkout")
 async def checkout(request: Request):
     data = await request.json()
-    email = data.get("email", "guest@interform.inc")
+    email = data.get("email", "guest@interform.inc").strip().lower()
     
-    if email in USER_CARTS and USER_CARTS[email]:
-        purchased = USER_CARTS[email]
-        USER_CARTS[email] = []
-        return {
-            "status": "success", 
-            "message": "Ödeme onaylandı! Steam Aile Paylaşımı slotları ve çevrimdışı şifreleme anahtarları hesabınıza tanımlandı."
-        }
-    raise HTTPException(status_code=400, detail="Sepetiniz boş.")
+    cart_items = USER_CARTS.get(email, [])
+    if not cart_items:
+        raise HTTPException(status_code=400, detail="Sepetiniz boş.")
 
-# --- ADMIN YÖNETİM ENDPOINTLERİ ---
+    # Stok düşme ve lisans anahtarı üretme simülasyonu
+    purchased_licenses = []
+    for item in cart_items:
+        game = next((g for g in STEAM_ACCOUNTS if g["id"] == item["id"]), None)
+        if game and game["stock"] > 0:
+            game["stock"] -= 1
+            # Benzersiz bir aile paylaşım anahtarı üretelim
+            import uuid
+            license_key = f"STEAM-FAM-{str(uuid.uuid4()).upper()[:16]}"
+            purchased_licenses.append({
+                "game_name": game["name"],
+                "key": license_key,
+                "status": "Aktif / Aile Modu Kilitli"
+            })
+
+    if email not in USER_ORDERS:
+        USER_ORDERS[email] = []
+    USER_ORDERS[email].extend(purchased_licenses)
+    
+    # Sepeti boşalt
+    USER_CARTS[email] = []
+    
+    return {
+        "status": "success", 
+        "message": "Ödeme başarıyla onaylandı! Lisans anahtarlarınız panelinize tanımlandı."
+    }
+
+# --- ADMIN API'LERİ ---
 @app.post("/api/admin/add-steam-account")
 async def add_steam_account(request: Request):
     data = await request.json()
@@ -234,6 +247,8 @@ async def update_rank(request: Request):
 
 @app.get("/api/admin/system-analysis")
 async def get_system_analysis():
+    total_stock = sum(acc["stock"] for acc in STEAM_ACCOUNTS)
+    total_users = len(USERS)
     return {
         "cpu_usage": SYSTEM_STATE["cpu"],
         "ram_usage": SYSTEM_STATE["ram"],
@@ -241,6 +256,8 @@ async def get_system_analysis():
         "active_threads": 42,
         "database_status": SYSTEM_STATE["status"],
         "security_threats": SYSTEM_STATE["active_threats"],
+        "total_stock": total_stock,
+        "total_users": total_users
     }
 
 @app.post("/api/admin/inject-fault")
@@ -282,7 +299,7 @@ async def ai_query(request: Request):
     except Exception as e:
         return {"response": f"AI Servis Hatası: {str(e)}{action_taken}"}
 
-# --- STEAM MAĞAZA VE SEPET SAYFASI ---
+# --- MAĞAZA SAYFASI ---
 @app.get("/store", response_class=HTMLResponse)
 async def store_page():
     return """
@@ -302,6 +319,7 @@ async def store_page():
                 .cart-box { background: #111; border: 1px solid #3a86ff; padding: 25px; margin-top: 40px; }
                 .warning-note { background: #1a1a1a; border-left: 3px solid #ffaa00; padding: 15px; margin-top: 20px; font-size: 0.95rem; color: #ccc; }
                 .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; }
+                .license-box { background: #0b1a10; border: 1px solid #4caf7d; padding: 20px; margin-top: 40px; }
             </style>
         </head>
         <body>
@@ -309,26 +327,33 @@ async def store_page():
                 <div class="header-flex">
                     <h1 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
                     <div>
+                        <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px;"></span>
                         <a href="/admin-dashboard" class="nav-link">YÖNETİM PANELİ</a>
                         <a href="/" class="nav-link" style="color:#ff5555;">ÇIKIŞ</a>
                     </div>
                 </div>
                 
                 <div class="warning-note">
-                    <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. E-posta ve şifre değiştirmek kesinlikle yasaktır ve otomatik engellenir.
+                    <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. Ödeme tamamlandığında lisans anahtarınız aşağıda belirir.
                 </div>
 
                 <div class="grid" id="steamGrid"></div>
 
                 <div class="cart-box">
-                    <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.2rem;">🛍️ SEPETİNİZ VE CHECKOUT</h2>
+                    <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
                     <div id="cartItems" style="margin-top:15px; color:#aaa;">Sepetiniz henüz boş.</div>
                     <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:#4caf7d;"></div>
-                    <button class="btn" id="checkoutBtn" style="display:none; background:#4caf7d;" onclick="processCheckout()">GÜVENLİ ÖDEMEYİ TAMAMLA (CHECKOUT)</button>
+                    <button class="btn" id="checkoutBtn" style="display:none; background:#4caf7d;" onclick="processCheckout()">GÜVENLİ ÖDEMEYİ TAMAMLA</button>
+                </div>
+
+                <div class="license-box" id="licenseSection" style="display:none;">
+                    <h2 style="font-family:'Orbitron'; color:#4caf7d; font-size:1.2rem;">🔑 SATIN ALINAN LİSANS ANAHTARLARINIZ</h2>
+                    <div id="licenseList" style="margin-top:15px;"></div>
                 </div>
             </div>
             <script>
                 const userEmail = localStorage.getItem('userEmail') || "guest@interform.inc";
+                document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail}`;
 
                 async function loadStore() {
                     const res = await fetch('/api/steam-accounts');
@@ -343,7 +368,7 @@ async def store_page():
                                 <p style="color:#aaa; margin-top:5px;">Kategori: ${acc.category}</p>
                                 <p style="color:#4caf7d; font-size:1.4rem; font-weight:bold; margin-top:10px;">$${acc.price}</p>
                                 <p style="color:#888; font-size:0.9rem;">Mevcut Stok: ${acc.stock} Slot</p>
-                                <button class="btn" onclick="addToCart(${acc.id})">SEPETE EKLE</button>
+                                <button class="btn" onclick="addToCart(${acc.id})" ${acc.stock <= 0 ? 'disabled style="background:#444;cursor:not-allowed;"' : ''}>${acc.stock > 0 ? 'SEPETE EKLE' : 'STOK TÜKENDİ'}</button>
                             </div>
                         `;
                     });
@@ -357,8 +382,11 @@ async def store_page():
                         body: JSON.stringify({id: id, email: userEmail})
                     });
                     const data = await res.json();
-                    alert(data.message);
-                    loadCart();
+                    if(res.ok) {
+                        loadStore();
+                    } else {
+                        alert(data.detail);
+                    }
                 }
 
                 async function loadCart() {
@@ -367,6 +395,8 @@ async def store_page():
                     const cartDiv = document.getElementById('cartItems');
                     const totalDiv = document.getElementById('cartTotal');
                     const checkoutBtn = document.getElementById('checkoutBtn');
+                    const licenseSection = document.getElementById('licenseSection');
+                    const licenseList = document.getElementById('licenseList');
 
                     if(data.items.length === 0) {
                         cartDiv.innerHTML = "Sepetiniz boş.";
@@ -376,6 +406,17 @@ async def store_page():
                         cartDiv.innerHTML = data.items.map(i => `<div style="padding:8px 0; border-bottom:1px solid #222; display:flex; justify-content:space-between;"><span>${i.name}</span><span>$${i.price}</span></div>`).join('');
                         totalDiv.innerHTML = `Toplam Tutar: $${data.total}`;
                         checkoutBtn.style.display = "block";
+                    }
+
+                    if(data.orders && data.orders.length > 0) {
+                        licenseSection.style.display = "block";
+                        licenseList.innerHTML = data.orders.map(o => `
+                            <div style="background:#051109; border:1px solid #2d6a4f; padding:12px; margin-top:10px;">
+                                <div style="font-weight:bold; color:#fff;">${o.game_name}</div>
+                                <div style="font-family:monospace; color:#4caf7d; margin-top:5px; font-size:1.1rem;">Anahtar: ${o.key}</div>
+                                <div style="font-size:0.8rem; color:#888; margin-top:3px;">Durum: ${o.status}</div>
+                            </div>
+                        `).join('');
                     }
                 }
 
@@ -388,7 +429,7 @@ async def store_page():
                     const data = await res.json();
                     if(res.ok) {
                         alert(data.message);
-                        loadCart();
+                        loadStore();
                     } else {
                         alert("Hata: " + data.detail);
                     }
@@ -400,7 +441,7 @@ async def store_page():
     </html>
     """
 
-# --- GELİŞMİŞ YÖNETİCİ PANELİ (TAM KOD) ---
+# --- YÖNETİCİ PANELİ ---
 @app.get("/admin-dashboard", response_class=HTMLResponse)
 async def admin_dashboard():
     return """
@@ -479,12 +520,12 @@ async def admin_dashboard():
                         <div class="stat-value green" id="statStatus">STABİL</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-title">AI BAŞMÜHENDİS</div>
-                        <div class="stat-value" style="color:var(--accent); font-size: 1.1rem; margin-top: 5px;">Qwen-3.8-27b</div>
+                        <div class="stat-title">KAYITLI KULLANICI</div>
+                        <div class="stat-value" id="statUsers" style="color:var(--accent);">Yükleniyor...</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-title">AKTİF HESAP HAVUZU</div>
-                        <div class="stat-value">50 Slot</div>
+                        <div class="stat-title">KALAN STOK (SLOT)</div>
+                        <div class="stat-value" id="statStock">Yükleniyor...</div>
                     </div>
                     <div class="stat-box">
                         <div class="stat-title">GÜVENLİK DUVARI</div>
@@ -563,6 +604,9 @@ async def admin_dashboard():
                     document.getElementById('diskVal').innerText = data.disk_io;
                     document.getElementById('threadVal').innerText = data.active_threads + " Aktif";
                     
+                    document.getElementById('statUsers').innerText = data.total_users + " Kullanıcı";
+                    document.getElementById('statStock').innerText = data.total_stock + " Slot";
+
                     const statStatus = document.getElementById('statStatus');
                     statStatus.innerText = data.database_status;
                     statStatus.className = data.database_status.includes("KRİTİK") ? "stat-value warning" : "stat-value green";
@@ -622,6 +666,7 @@ async def admin_dashboard():
                     });
                     const data = await res.json();
                     alert(data.message);
+                    fetchSystemAnalysis();
                 }
 
                 async function updateRank() {
