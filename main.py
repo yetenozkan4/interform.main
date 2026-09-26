@@ -37,7 +37,7 @@ USERS = {
     }
 }
 
-# --- 1. ESKİ DETAYLI VE OTONOM KURUMSAL ANA SAYFA ---
+# --- 1. ESKİ DETAYLI VE OTONOM KURUMSAL ANA SAYFA (Formsuz, Eski Kategorilerle) ---
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     return """
@@ -62,29 +62,32 @@ async def read_index(request: Request):
                 .nav-links a:hover { color: var(--accent); }
                 .nav-btn { background: rgba(58,134,255,0.1); border: 1px solid var(--accent); color: var(--accent); padding: 8px 16px; font-family: 'Orbitron', monospace; font-size: 0.75rem; text-decoration: none; }
 
-                .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 50px; padding: 80px 60px; align-items: center; border-bottom: 1px solid var(--border); }
-                .hero-content h1 { font-family: 'Orbitron', monospace; font-size: 2.8rem; font-weight: 900; line-height: 1.2; margin-bottom: 20px; }
-                .hero-content h1 span { color: var(--accent); }
-                .hero-content p { color: var(--secondary); font-size: 1.15rem; line-height: 1.6; margin-bottom: 30px; max-width: 650px; }
-                
-                .auth-card { background: var(--surface); border: 1px solid var(--border); padding: 30px; box-shadow: 0 0 40px rgba(0,0,0,0.8); position: relative; }
-                .auth-title { font-family: 'Orbitron', monospace; font-size: 1rem; font-weight: 700; color: var(--accent); margin-bottom: 20px; text-align: center; }
-                .error-box { background: rgba(255,85,85,0.1); border: 1px solid #ff5555; color: #ff5555; padding: 10px; font-size: 0.85rem; margin-bottom: 15px; display: none; }
-                input { width: 100%; padding: 12px; margin-top: 12px; background: var(--bg); border: 1px solid var(--border); color: #fff; font-family: inherit; outline: none; }
-                input:focus { border-color: var(--accent); }
-                .btn { background: var(--accent); color: #fff; border: none; padding: 14px; margin-top: 20px; width: 100%; font-family: 'Orbitron', monospace; font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: background 0.2s; }
+                .hero { padding: 100px 60px; text-align: center; border-bottom: 1px solid var(--border); background: radial-gradient(circle at center, #111 0%, #070707 70%); }
+                .hero h1 { font-family: 'Orbitron', monospace; font-size: 3.2rem; font-weight: 900; line-height: 1.2; margin-bottom: 20px; }
+                .hero h1 span { color: var(--accent); }
+                .hero p { color: var(--secondary); font-size: 1.2rem; line-height: 1.6; margin-bottom: 40px; max-width: 800px; margin-left: auto; margin-right: auto; }
+                .hero-btns { display: flex; gap: 20px; justify-content: center; }
+                .btn { background: var(--accent); color: #fff; border: none; padding: 14px 30px; font-family: 'Orbitron', monospace; font-weight: 700; font-size: 0.85rem; cursor: pointer; text-decoration: none; display: inline-block; transition: background 0.2s; }
                 .btn:hover { background: #2670e8; }
-                .toggle-link { text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--secondary); cursor: pointer; }
-                .toggle-link span { color: var(--accent); text-decoration: underline; }
+                .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--primary); }
+                .btn-outline:hover { border-color: var(--accent); }
 
                 .features-section { padding: 80px 60px; }
-                .section-title { font-family: 'Orbitron', monospace; font-size: 1.5rem; font-weight: 700; margin-bottom: 40px; text-align: center; }
+                .section-title { font-family: 'Orbitron', monospace; font-size: 1.6rem; font-weight: 700; margin-bottom: 50px; text-align: center; letter-spacing: 0.05em; }
                 .section-title span { color: var(--accent); }
-                .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
-                .feature-box { background: var(--surface); border: 1px solid var(--border); padding: 35px; transition: border-color 0.2s; }
-                .feature-box:hover { border-color: var(--accent); }
+                
+                .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; max-width: 1300px; margin: 0 auto; }
+                .feature-box { background: var(--surface); border: 1px solid var(--border); padding: 40px; transition: border-color 0.2s, transform 0.2s; }
+                .feature-box:hover { border-color: var(--accent); transform: translateY(-5px); }
+                .feature-icon { font-size: 2rem; margin-bottom: 20px; color: var(--accent); }
                 .feature-box h3 { font-family: 'Orbitron', monospace; font-size: 1.1rem; margin-bottom: 15px; color: var(--primary); }
                 .feature-box p { color: var(--secondary); font-size: 0.95rem; line-height: 1.6; }
+
+                .stats-banner { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--surface); }
+                .stat-item { padding: 40px; text-align: center; border-right: 1px solid var(--border); }
+                .stat-item:last-child { border-right: none; }
+                .stat-num { font-family: 'Orbitron', monospace; font-size: 2.2rem; font-weight: 900; color: var(--accent); margin-bottom: 8px; }
+                .stat-desc { font-family: 'Orbitron', monospace; font-size: 0.75rem; color: var(--secondary); letter-spacing: 0.1em; }
 
                 .footer { padding: 40px 60px; border-top: 1px solid var(--border); text-align: center; color: var(--secondary); font-size: 0.9rem; font-family: 'Orbitron', monospace; }
             </style>
@@ -101,98 +104,77 @@ async def read_index(request: Request):
             </div>
 
             <div class="hero">
-                <div class="hero-content">
-                    <h1>YENİ NESİL <span>OTONOM</span> SİSTEM YÖNETİMİ</h1>
-                    <p>Interform Inc., kritik kurumsal altyapılar, yapay zeka destekli otonom onarım mimarileri ve dijital envanter dağıtım ağları sunar. Kesintisiz performans ve yüksek güvenlik standartlarıyla tanışın.</p>
-                    <div style="display: flex; gap: 15px;">
-                        <a href="/store" class="btn" style="display:inline-block; width:auto; padding:14px 30px; text-decoration:none; text-align:center;">STEAM MAĞAZASINI KEŞFET</a>
-                        <a href="/admin-dashboard" class="btn" style="display:inline-block; width:auto; padding:14px 30px; background:var(--surface); border:1px solid var(--border); text-decoration:none; text-align:center;">YÖNETİCİ GİRİŞİ</a>
-                    </div>
+                <h1>YENİ NESİL <span>OTONOM</span> SİSTEM YÖNETİMİ VE DAĞITIM AĞI</h1>
+                <p>Interform Inc.; kritik kurumsal altyapılar, yapay zeka destekli otonom onarım mimarileri, yüksek güvenlikli veritabanları ve dijital envanter paylaşım ağları inşa eder. Kesintisiz performans ve endüstriyel standartlarda dijital varlık yönetimi.</p>
+                <div class="hero-btns">
+                    <a href="/store" class="btn">STEAM MAĞAZASINI KEŞFET</a>
+                    <a href="/admin-dashboard" class="btn btn-outline">YÖNETİCİ PANELİNE GİRİŞ</a>
                 </div>
+            </div>
 
-                <div class="auth-card">
-                    <div class="auth-title" id="formTitle">// SİSTEM GİRİŞ PORTALI</div>
-                    <div class="error-box" id="errorMsg"></div>
-                    
-                    <div id="nameField" style="display:none;">
-                        <input type="text" id="name" placeholder="Ad Soyad / Kurum Adı">
-                    </div>
-                    <input type="email" id="email" placeholder="Kurumsal E-posta Adresi">
-                    <input type="password" id="password" placeholder="Erişim Şifresi">
-                    
-                    <button class="btn" id="submitBtn" onclick="handleAuth()">GİRİŞİ BAŞLAT</button>
-                    <div class="toggle-link" onclick="toggleMode()"><span id="toggleText">Hesabınız yok mu? Kayıt oluşturun.</span></div>
+            <div class="stats-banner">
+                <div class="stat-item">
+                    <div class="stat-num">%99.99</div>
+                    <div class="stat-desc">SİSTEM UPTIME ORANI</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">&lt; 12ms</div>
+                    <div class="stat-desc">ORTALAMA YANIT SÜRESİ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">24/7</div>
+                    <div class="stat-desc">OTONOM YAPAY ZEKA DENETİMİ</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-num">100%</div>
+                    <div class="stat-desc">ŞİFRELENMİŞ LİSANS HAVUZU</div>
                 </div>
             </div>
 
             <div class="features-section">
-                <div class="section-title">KURUMSAL <span>MİMARİ</span> ÖZELLİKLERİ</div>
+                <div class="section-title">KURUMSAL <span>MİMARİ</span> VE KATEGORİLER</div>
                 <div class="features-grid">
                     <div class="feature-box">
-                        <h3>Otonom Self-Healing</h3>
+                        <div class="feature-icon">🛡️</div>
+                        <h3>Otonom Altyapı & Self-Healing</h3>
                         <p>Yapay zeka çekirdeğimiz sistem anormalliklerini milisaniyeler içinde tespit eder ve manuel müdahaleye gerek kalmadan otomatik olarak onarır.</p>
                     </div>
                     <div class="feature-box">
+                        <div class="feature-icon">🎮</div>
                         <h3>Steam Aile Paylaşım Ağı</h3>
-                        <p>Popüler AAA ve bağımsız oyun lisanslarını güvenli aile havuzu protokolleriyle entegre edin, envanterinizi anında yönetin.</p>
+                        <p>Popüler AAA ve bağımsız oyun lisanslarını güvenli aile havuzu protokolleriyle entegre edin, dijital oyun envanterinizi anında yönetin.</p>
                     </div>
                     <div class="feature-box">
+                        <div class="feature-icon">🔒</div>
                         <h3>Rol Tabanlı Güvenlik (RBAC)</h3>
-                        <p>Gelişmiş şifreleme ve çok katmanlı yetkilendirme modelleri ile tüm dijital varlıklarınız ve veritabanınız maksimum koruma altındadır.</p>
+                        <p>Gelişmiş şifreleme ve çok katmanlı yetkilendirme modelleri ile tüm dijital varlıklarınız, veritabanınız ve hassas verileriniz maksimum koruma altındadır.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-icon">⚡</div>
+                        <h3>Gerçek Zamanlı Metrik Analizi</h3>
+                        <p>CPU, RAM, disk I/O ve aktif thread tüketimlerini anlık olarak takip edin; potansiyel darboğazları önceden bizzat yapay zekaya raporlayın.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-icon">🤖</div>
+                        <h3>Yapay Zeka Başmühendis Asistanı</h3>
+                        <p>Sistem yöneticileri için özel olarak geliştirilmiş LLM tabanlı otonom komut merkezi ile altyapınızı doğal dille yönetin ve optimize edin.</p>
+                    </div>
+                    <div class="feature-box">
+                        <div class="feature-icon">🌐</div>
+                        <h3>Global Dağıtım Protokolü</h3>
+                        <p>Lisans anahtarlarının anında ve hatasız teslimatını sağlayan optimize edilmiş güvenli ödeme ve cüzdan entegrasyon altyapısı.</p>
                     </div>
                 </div>
             </div>
 
             <div class="footer">
-                &copy; 2026 Interform Inc. Tüm Hakları Saklıdır. Otonom Altyapı Sistemleri.
+                &copy; 2026 Interform Inc. Tüm Hakları Saklıdır. Otonom Altyapı ve Dağıtım Sistemleri.
             </div>
-
-            <script>
-                let isRegister = false;
-                function toggleMode() {
-                    isRegister = !isRegister;
-                    document.getElementById('formTitle').innerText = isRegister ? "// YENİ HESAP OLUŞTUR" : "// SİSTEM GİRİŞ PORTALI";
-                    document.getElementById('nameField').style.display = isRegister ? "block" : "none";
-                    document.getElementById('submitBtn').innerText = isRegister ? "KAYDI TAMAMLA" : "GİRİŞİ BAŞLAT";
-                    document.getElementById('toggleText').innerText = isRegister ? "Zaten hesabınız var mı? Giriş yapın." : "Hesabınız yok mu? Kayıt oluşturun.";
-                }
-
-                async function handleAuth() {
-                    const email = document.getElementById('email').value.trim().toLowerCase();
-                    const password = document.getElementById('password').value;
-                    const name = document.getElementById('name').value;
-                    const errorBox = document.getElementById('errorMsg');
-                    errorBox.style.display = 'none';
-
-                    const endpoint = isRegister ? '/api/register' : '/api/login';
-                    const payload = isRegister ? {email, password, name} : {email, password};
-
-                    const res = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await res.json();
-
-                    if(res.ok) {
-                        if(isRegister) {
-                            alert(data.message);
-                            toggleMode();
-                        } else {
-                            localStorage.setItem('userEmail', data.email);
-                            localStorage.setItem('userRole', data.role);
-                            window.location.href = data.redirect;
-                        }
-                    } else {
-                        errorBox.innerText = data.detail || "Bir hata oluştu.";
-                        errorBox.style.display = 'block';
-                    }
-                }
-            </script>
         </body>
     </html>
     """
 
+# --- 2. GİRİŞ/KAYIT API'LERİ (Mağaza ve Panel arkasında kullanılmaya devam ediyor) ---
 @app.post("/api/register")
 async def api_register(request: Request):
     data = await request.json()
@@ -225,7 +207,7 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- 2. STEAM MAĞAZA API VE SAYFASI (/store) ---
+# --- 3. STEAM MAĞAZA API VE SAYFASI (/store) ---
 @app.get("/api/steam-accounts")
 async def get_steam_accounts():
     return {"accounts": STEAM_ACCOUNTS}
@@ -469,7 +451,7 @@ async def store_page():
     </html>
     """
 
-# --- 3. YÖNETİCİ PANELİ (/admin-dashboard) ---
+# --- 4. YÖNETİCİ PANELİ (/admin-dashboard) ---
 @app.post("/api/admin/add-steam-account")
 async def add_steam_account(request: Request):
     data = await request.json()
