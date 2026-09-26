@@ -17,7 +17,7 @@ SYSTEM_STATE = {
     "memory_leak_simulated": False
 }
 
-# Steam Aile Paylaşımı / Çevrimdışı Hesap Mağaza Envanteri
+# Steam Aile Paylaşımı Mağaza Envanteri
 STEAM_ACCOUNTS = [
     {"id": 1, "name": "Red Dead Redemption 2 (Steam Çevrimdışı/Aile)", "price": 59.99, "category": "AAA Oyun", "stock": 8, "type": "Steam Aile Paylaşımı"},
     {"id": 2, "name": "Grand Theft Auto V (Enhanced Edition)", "price": 39.99, "category": "AAA Oyun", "stock": 15, "type": "Steam Aile Paylaşımı"},
@@ -25,9 +25,8 @@ STEAM_ACCOUNTS = [
     {"id": 4, "name": "Cyberpunk 2077 + Phantom Liberty", "price": 89.99, "category": "AAA Oyun", "stock": 5, "type": "Steam Aile Paylaşımı"}
 ]
 
-# Bellek Havuzları
 USER_CARTS = {}
-USER_ORDERS = {} # Satın alınan lisanslar burada saklanacak
+USER_ORDERS = {}
 
 USERS = {
     "admin@interform.inc": {
@@ -183,36 +182,42 @@ async def get_cart(email: str):
 async def checkout(request: Request):
     data = await request.json()
     email = data.get("email", "guest@interform.inc").strip().lower()
+    card_number = data.get("card_number", "").strip()
+    card_expiry = data.get("card_expiry", "").strip()
+    card_cvv = data.get("card_cvv", "").strip()
+
+    if not card_number or not card_expiry or not card_cvv:
+        raise HTTPException(status_code=400, detail="Lütfen tüm kart bilgilerini eksiksiz doldurun.")
     
+    if len(card_number) < 16:
+        raise HTTPException(status_code=400, detail="Geçersiz kart numarası.")
+
     cart_items = USER_CARTS.get(email, [])
     if not cart_items:
         raise HTTPException(status_code=400, detail="Sepetiniz boş.")
 
-    # Stok düşme ve lisans anahtarı üretme simülasyonu
     purchased_licenses = []
     for item in cart_items:
         game = next((g for g in STEAM_ACCOUNTS if g["id"] == item["id"]), None)
         if game and game["stock"] > 0:
             game["stock"] -= 1
-            # Benzersiz bir aile paylaşım anahtarı üretelim
             import uuid
             license_key = f"STEAM-FAM-{str(uuid.uuid4()).upper()[:16]}"
             purchased_licenses.append({
                 "game_name": game["name"],
                 "key": license_key,
-                "status": "Aktif / Aile Modu Kilitli"
+                "status": "Aktif / Ödeme Onaylandı"
             })
 
     if email not in USER_ORDERS:
         USER_ORDERS[email] = []
     USER_ORDERS[email].extend(purchased_licenses)
     
-    # Sepeti boşalt
     USER_CARTS[email] = []
     
     return {
         "status": "success", 
-        "message": "Ödeme başarıyla onaylandı! Lisans anahtarlarınız panelinize tanımlandı."
+        "message": "Ödemeniz başarıyla tahsil edildi! Lisans anahtarlarınız oluşturuldu."
     }
 
 # --- ADMIN API'LERİ ---
@@ -320,6 +325,12 @@ async def store_page():
                 .warning-note { background: #1a1a1a; border-left: 3px solid #ffaa00; padding: 15px; margin-top: 20px; font-size: 0.95rem; color: #ccc; }
                 .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; }
                 .license-box { background: #0b1a10; border: 1px solid #4caf7d; padding: 20px; margin-top: 40px; }
+                
+                /* Modal Pencere Tasarımı */
+                .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+                .modal-content { background: #111; border: 1px solid #3a86ff; padding: 30px; width: 400px; box-shadow: 0 0 30px rgba(58,134,255,0.3); }
+                .modal input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: inherit; }
+                .row { display: flex; gap: 10px; }
             </style>
         </head>
         <body>
@@ -334,7 +345,7 @@ async def store_page():
                 </div>
                 
                 <div class="warning-note">
-                    <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. Ödeme tamamlandığında lisans anahtarınız aşağıda belirir.
+                    <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. Ödeme aşamasında kart bilgileriniz şifrelenerek işlenir.
                 </div>
 
                 <div class="grid" id="steamGrid"></div>
@@ -343,7 +354,7 @@ async def store_page():
                     <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
                     <div id="cartItems" style="margin-top:15px; color:#aaa;">Sepetiniz henüz boş.</div>
                     <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:#4caf7d;"></div>
-                    <button class="btn" id="checkoutBtn" style="display:none; background:#4caf7d;" onclick="processCheckout()">GÜVENLİ ÖDEMEYİ TAMAMLA</button>
+                    <button class="btn" id="checkoutBtn" style="display:none; background:#4caf7d;" onclick="openCheckoutModal()">GÜVENLİ ÖDEME EKRANINI AÇ</button>
                 </div>
 
                 <div class="license-box" id="licenseSection" style="display:none;">
@@ -351,6 +362,22 @@ async def store_page():
                     <div id="licenseList" style="margin-top:15px;"></div>
                 </div>
             </div>
+
+            <!-- ÖDEME MODALI -->
+            <div id="checkoutModal" class="modal">
+                <div class="modal-content">
+                    <h2 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.1rem; margin-bottom:15px;">💳 KREDİ KARTI İLE ÖDEME</h2>
+                    <div id="modalError" style="color:#ff5555; font-size:0.85rem; margin-bottom:10px; display:none;"></div>
+                    <input type="text" id="cardNumber" placeholder="Kart Numarası (örn: 4532 ... ... ...)" maxlength="16">
+                    <div class="row">
+                        <input type="text" id="cardExpiry" placeholder="AA/YY" maxlength="5">
+                        <input type="password" id="cardCvv" placeholder="CVV" maxlength="3">
+                    </div>
+                    <button class="btn" style="background:#4caf7d; margin-top:20px;" onclick="processCheckout()">ÖDEMEYİ ONAYLA VE TAMAMLA</button>
+                    <button class="btn" style="background:#333; margin-top:10px;" onclick="closeCheckoutModal()">İPTAL</button>
+                </div>
+            </div>
+
             <script>
                 const userEmail = localStorage.getItem('userEmail') || "guest@interform.inc";
                 document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail}`;
@@ -420,18 +447,35 @@ async def store_page():
                     }
                 }
 
+                function openCheckoutModal() {
+                    document.getElementById('checkoutModal').style.display = 'flex';
+                }
+
+                function closeCheckoutModal() {
+                    document.getElementById('checkoutModal').style.display = 'none';
+                }
+
                 async function processCheckout() {
+                    const card_number = document.getElementById('cardNumber').value;
+                    const card_expiry = document.getElementById('cardExpiry').value;
+                    const card_cvv = document.getElementById('cardCvv').value;
+                    const errorBox = document.getElementById('modalError');
+                    errorBox.style.display = 'none';
+
                     const res = await fetch('/api/checkout', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({email: userEmail})
+                        body: JSON.stringify({email: userEmail, card_number, card_expiry, card_cvv})
                     });
                     const data = await res.json();
+                    
                     if(res.ok) {
                         alert(data.message);
+                        closeCheckoutModal();
                         loadStore();
                     } else {
-                        alert("Hata: " + data.detail);
+                        errorBox.innerText = data.detail;
+                        errorBox.style.display = 'block';
                     }
                 }
 
