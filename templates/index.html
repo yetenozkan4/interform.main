@@ -19,7 +19,6 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; min-height: 100vh; overflow: hidden; position: relative; }
   
-  /* GİRİŞ EKRANI */
   #login-screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 100; background: var(--bg); transition: opacity 0.8s ease; }
   #login-screen.hidden { opacity: 0; pointer-events: none; }
   .login-box { border: 1px solid var(--dim); padding: 50px 60px; position: relative; background: rgba(25,25,25,0.95); min-width: 420px; text-align: center; }
@@ -34,7 +33,6 @@
   .login-switch a { color: var(--primary); cursor: pointer; text-decoration: underline; }
   .login-error { color: var(--danger); font-size: 0.8rem; margin-top: 15px; }
 
-  /* ANA UYGULAMA İSKELETİ */
   #app { display: none; height: 100vh; flex-direction: column; }
   #app.visible { display: flex; }
   .header { display: flex; align-items: center; justify-content: space-between; padding: 16px 30px; border-bottom: 1px solid var(--dim); background: rgba(18,18,18,0.98); z-index: 50; }
@@ -46,7 +44,6 @@
   .logout-btn { background: transparent; border: 1px solid var(--dim); color: var(--dim); padding: 6px 16px; cursor: pointer; }
   .logout-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-  /* MENÜ / SIDEBAR */
   .sidebar-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .sidebar-overlay.visible { opacity: 1; pointer-events: all; }
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 280px; background: rgba(18,18,18,0.98); border-right: 1px solid var(--dim); z-index: 201; transform: translateX(-100%); transition: transform 0.35s; display: flex; flex-direction: column; }
@@ -58,7 +55,6 @@
   .menu-item { display: flex; align-items: center; gap: 14px; padding: 14px 24px; cursor: pointer; font-size: 0.95rem; color: var(--dim); border-left: 3px solid transparent; }
   .menu-item:hover, .menu-item.active { color: var(--primary); background: rgba(255,255,255,0.06); border-left-color: var(--primary); }
 
-  /* İÇERİK ALANLARI */
   .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .menu-panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
   .menu-panel.active { display: flex; }
@@ -78,7 +74,6 @@
   .data-table th, .data-table td { text-align: left; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .data-table th { font-family: 'Orbitron', monospace; font-size: 0.6rem; color: var(--dim); }
 
-  /* YAPAY ZEKA SOHBET ARAYÜZÜ */
   .ai-layout { flex: 1; display: flex; overflow: hidden; flex-direction: column; }
   .chat-area { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
   .message { display: flex; gap: 12px; max-width: 800px; }
@@ -94,7 +89,6 @@
 </head>
 <body>
 
-<!-- GİRİŞ & KAYIT EKRANI -->
 <div id="login-screen">
   <div class="login-box">
     <div class="jarvis-logo">INTERFORM INC.</div>
@@ -116,7 +110,6 @@
   </div>
 </div>
 
-<!-- ANA PANEL -->
 <div id="app">
   <div class="header">
     <div class="header-left">
@@ -145,7 +138,6 @@
 
   <div class="main-content">
     
-    <!-- AI SOHBET SEKMESİ -->
     <div id="menu-ai" class="menu-panel active" style="display:flex;">
       <div class="ai-layout">
         <div class="chat-area" id="chat-area">
@@ -158,7 +150,6 @@
       </div>
     </div>
 
-    <!-- İNJECTOR / HİLELER SEKMESİ -->
     <div id="menu-cheats" class="menu-panel">
       <div class="panel-header"><div class="panel-title">OYUN İÇİ İNTÜKTÖR VE ARAÇ VERİTABANI</div></div>
       <div class="panel-body">
@@ -181,7 +172,6 @@
       </div>
     </div>
 
-    <!-- MAĞAZA SEKMESİ -->
     <div id="menu-store" class="menu-panel">
       <div class="panel-header"><div class="panel-title">OYUN KEYLERİ VE DİJİTAL MAĞAZA</div></div>
       <div class="panel-body">
@@ -203,7 +193,6 @@
       </div>
     </div>
 
-    <!-- ÜYELER SEKMESİ -->
     <div id="menu-users" class="menu-panel">
       <div class="panel-header"><div class="panel-title">ŞİRKET ÜYELERİ LİSTESİ</div></div>
       <div class="panel-body">
