@@ -2,22 +2,34 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 import os
-import time
 from groq import Groq
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-# --- SİSTEM DURUMU VE BELLEK SİMÜLASYONU (Otonom Onarım için) ---
+# --- SİSTEM VE ENJEKTÖR VERİTABANI SİMÜLASYONU ---
 SYSTEM_STATE = {
     "status": "STABİL",
     "cpu": "18.4%",
     "ram": "4.2 GB / 16 GB",
     "active_threats": 0,
-    "memory_leak_simulated": False,
-    "firewall_bypass_risk": False
+    "memory_leak_simulated": False
 }
+
+# Gündemdeki Popüler Oyunlar Enjektör Listesi
+INJECTORS = [
+    {"id": "cs2", "name": "Counter-Strike 2", "engine": "Source 2", "status": "UNDETECTED", "version": "v4.2.1", "downloads": 1420},
+    {"id": "valorant", "name": "Valorant (Vanguard Bypass)", "engine": "Unreal Engine 4/5", "status": "UNDETECTED", "version": "v2.8.4", "downloads": 3100},
+    {"id": "gta5", "name": "GTA V / FiveM", "engine": "RAGE Engine", "status": "UNDETECTED", "version": "v5.0.0", "downloads": 2450},
+    {"id": "apex", "name": "Apex Legends", "engine": "Source", "status": "UPDATING", "version": "v1.9.2", "downloads": 980},
+    {"id": "fortnite", "name": "Fortnite", "engine": "Unreal Engine 5", "status": "UNDETECTED", "version": "v3.1.0", "downloads": 1890}
+]
+
+# Kullanıcılardan gelen özel istek enjektörleri
+CUSTOM_REQUESTS = [
+    {"id": 1, "game": "Project Zomboid", "user": "agent_47@interform.inc", "status": "İşleme Alındı", "priority": "Orta"}
+]
 
 RANKS = [
     "Administrator",
@@ -84,40 +96,42 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- YÖNETİM ENDPOINTLERİ ---
-@app.post("/api/admin/update-rank")
-async def update_user_rank(request: Request):
+# --- ENJEKTÖR YÖNETİM ENDPOINTLERİ ---
+@app.get("/api/injectors")
+async def get_injectors():
+    return {"injectors": INJECTORS, "requests": CUSTOM_REQUESTS}
+
+@app.post("/api/admin/add-injector")
+async def add_injector(request: Request):
     data = await request.json()
-    target_email = data.get("email", "").strip().lower()
-    new_rank = data.get("rank", "")
-    admin_secret = data.get("adminSecret", "")
-
-    if new_rank not in RANKS:
-        raise HTTPException(status_code=400, detail="Geçersiz rütbe.")
-    if new_rank == "Administrator" and admin_secret != "admin123":
-        raise HTTPException(status_code=403, detail="Administrator rütbesi için doğru admin şifresi gerekli!")
-    if target_email not in USERS:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
-
-    USERS[target_email]["role"] = new_rank
-    return {"status": "success", "message": f"{target_email} rütbesi {new_rank} yapıldı."}
-
-@app.post("/api/admin/add-product")
-async def add_product(request: Request):
-    data = await request.json()
-    new_id = len(PRODUCTS) + 1
-    PRODUCTS.append({
+    new_id = data.get("id", "custom_game")
+    INJECTORS.append({
         "id": new_id,
         "name": data.get("name"),
-        "price": float(data.get("price", 0)),
-        "category": data.get("category", "Genel"),
-        "stock": int(data.get("stock", 10))
+        "engine": data.get("engine", "Custom"),
+        "status": "UNDETECTED",
+        "version": data.get("version", "v1.0.0"),
+        "downloads": 0
     })
-    return {"status": "success", "message": "Ürün mağazaya eklendi."}
+    return {"status": "success", "message": f"{data.get('name')} için enjektör modülü sisteme eklendi."}
 
-@app.get("/api/products")
-async def get_products():
-    return {"products": PRODUCTS}
+@app.post("/api/user/request-injector")
+async def request_injector(request: Request):
+    data = await request.json()
+    game_name = data.get("game", "").strip()
+    email = data.get("email", "misafir@interform.inc")
+    
+    if not game_name:
+        raise HTTPException(status_code=400, detail="Oyun adı boş olamaz.")
+        
+    CUSTOM_REQUESTS.append({
+        "id": len(CUSTOM_REQUESTS) + 1,
+        "game": game_name,
+        "user": email,
+        "status": "İnceleniyor (Sırada)",
+        "priority": "Özel İstek"
+    })
+    return {"status": "success", "message": f"'{game_name}' için özel enjektör talebiniz sıraya alındı."}
 
 # --- SİSTEM ANALİZİ VE OTONOM TETİKLEYİCİ API ---
 @app.get("/api/admin/system-analysis")
@@ -133,7 +147,6 @@ async def get_system_analysis():
         "ai_status": "Active (Qwen-3.8-27b Self-Healing Enabled)"
     }
 
-# Test amacıyla sisteme manuel hata enjekte etme (AI'nın onarması için)
 @app.post("/api/admin/inject-fault")
 async def inject_fault():
     SYSTEM_STATE["status"] = "KRİTİK UYARI (Bellek Sızıntısı)"
@@ -141,7 +154,7 @@ async def inject_fault():
     SYSTEM_STATE["ram"] = "15.1 GB / 16 GB"
     SYSTEM_STATE["active_threats"] = 2
     SYSTEM_STATE["memory_leak_simulated"] = True
-    return {"status": "success", "message": "Sisteme simüle edilmiş bellek sızıntısı ve performans darboğazı enjekte edildi. AI'dan onarmasını isteyebilirsiniz."}
+    return {"status": "success", "message": "Sisteme simüle edilmiş bellek sızıntısı ve performans darboğazı enjekte edildi."}
 
 # --- TAM YETKİLİ VE OTONOM AI ENDPOINTİ ---
 @app.post("/api/ai-query")
@@ -149,36 +162,30 @@ async def ai_query(request: Request):
     data = await request.json()
     prompt = data.get("prompt", "").lower()
     
-    # OTONOM ONARIM TETİKLEYİCİSİ (Self-Healing Logic)
     action_taken = ""
     if "onar" in prompt or "fix" in prompt or "çöz" in prompt or "optimize" in prompt or "temizle" in prompt:
         if SYSTEM_STATE["memory_leak_simulated"] or SYSTEM_STATE["active_threats"] > 0 or "KRİTİK" in SYSTEM_STATE["status"]:
-            # AI otonom olarak sorunu çözer ve durumu normale döndürür
             SYSTEM_STATE["status"] = "STABİL"
             SYSTEM_STATE["cpu"] = "19.1%"
             SYSTEM_STATE["ram"] = "4.4 GB / 16 GB"
             SYSTEM_STATE["active_threats"] = 0
             SYSTEM_STATE["memory_leak_simulated"] = False
-            action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği bellek sızıntısını izole etti, önbelleği temizledi, tehditleri karantinaya aldı ve sistem kararlılığını %99.9 seviyesine geri getirdi."
+            action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği bellek sızıntısını izole etti, önbelleği temizledi ve sistem kararlılığını geri getirdi."
         else:
-            action_taken = "\n\n[OTONOM BİLGİ]: Sistem halihazırda tamamen stabil çalışıyor. Acil müdahale gerektiren bir hata bulunamadı."
+            action_taken = "\n\n[OTONOM BİLGİ]: Sistem halihazırda tamamen stabil çalışıyor."
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
-        fallback_msg = f"[SİSTEM UYARISI]: GROQ_API_KEY bulunamadı! Simüle Edilen Otonom Yanıt: Sistem durumu kontrol edildi.{action_taken}"
-        return {"response": fallback_msg}
+        return {"response": f"[SİSTEM UYARISI]: GROQ_API_KEY bulunamadı! Simüle Edilen Otonom Yanıt: İşlem tamamlandı.{action_taken}"}
     
     try:
         client = Groq(api_key=api_key)
         system_context = f"""
-        Sen Interform Inc.'in tam yetkili, otonom başmühendis ve sistem analisti yapay zeka asistanısın (Model: Qwen-3.8-27b).
+        Sen Interform Inc.'in tam yetkili, otonom başmühendis ve hile/enjektör operasyonları sorumlusu yapay zeka asistanısın (Model: Qwen-3.8-27b).
         Şu anki Anlık Sistem Durumu:
         - Durum: {SYSTEM_STATE['status']}
         - CPU: {SYSTEM_STATE['cpu']}
         - RAM: {SYSTEM_STATE['ram']}
-        - Tehditler: {SYSTEM_STATE['active_threats']}
-        
-        Kullanıcı sana sistem analizi, güvenlik taraması veya hata onarımı için komut verdiğinde, yetkilerini kullanarak arka plandaki sorunları otonom şekilde çözebilir ve bunu siberpunk, profesyonel bir üslupla raporlayabilirsin.
         """
         
         chat_completion = client.chat.completions.create(
@@ -198,37 +205,60 @@ async def store_page():
     return """
     <html>
         <head>
-            <title>Interform Inc. | Mağaza</title>
+            <title>Interform Inc. | Mağaza & Enjektör Portali</title>
             <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
             <style>
                 body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; padding: 40px; }
                 .container { max-width: 1100px; margin: 0 auto; }
                 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px; }
                 .card { background: #111; border: 1px solid #262626; padding: 20px; }
-                .btn { background: #3a86ff; color: #fff; border: none; padding: 10px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; width: 100%; }
+                .btn { background: #ff007f; color: #fff; border: none; padding: 10px 15px; font-family: 'Orbitron'; cursor: pointer; margin-top: 10px; width: 100%; }
+                .request-box { background: #111; border: 1px solid #262626; padding: 25px; margin-top: 40px; }
+                input { width: 100%; padding: 10px; background: #070707; border: 1px solid #262626; color: #fff; margin-top: 10px; font-family: inherit; }
             </style>
         </head>
         <body>
             <div class="container">
-                <h1 style="font-family:'Orbitron'; color:#3a86ff;">// INTERFORM MAĞAZA</h1>
-                <a href="/" style="color:#aaa; text-decoration:none;">&larr; Ana Sayfa</a>
-                <div class="grid" id="productGrid"></div>
+                <h1 style="font-family:'Orbitron'; color:#ff007f;">// OYUN ENJEKTÖRLERİ & MAĞAZA</h1>
+                <a href="/admin-dashboard" style="color:#aaa; text-decoration:none;">&larr; Yönetim Paneli</a>
+                
+                <h2 style="font-family:'Orbitron'; margin-top:30px; font-size:1.1rem; color:#4caf7d;">Aktif Oyun Modülleri</h2>
+                <div class="grid" id="injectorGrid"></div>
+
+                <div class="request-box">
+                    <h3 style="font-family:'Orbitron'; color:#3a86ff; font-size:1rem;">🎯 ÖZEL OYUN / ENJEKTÖR İSTEĞİ</h3>
+                    <p style="color:#aaa; font-size:0.9rem; margin-top:5px;">Listede olmayan küçük çaplı veya indie bir oyun için enjektör talebinde bulunun.</p>
+                    <input type="text" id="reqGame" placeholder="İstediğiniz Oyunun Adı (örn: Lethal Company)">
+                    <button class="btn" style="background:#3a86ff;" onclick="submitRequest()">ÖZEL TALEP OLUŞTUR</button>
+                </div>
             </div>
             <script>
-                fetch('/api/products').then(res => res.json()).then(data => {
-                    const grid = document.getElementById('productGrid');
-                    data.products.forEach(p => {
+                fetch('/api/injectors').then(res => res.json()).then(data => {
+                    const grid = document.getElementById('injectorGrid');
+                    data.injectors.forEach(inj => {
                         grid.innerHTML += `
                             <div class="card">
-                                <h3 style="font-family:'Orbitron';">${p.name}</h3>
-                                <p style="color:#aaa;">Kategori: ${p.category}</p>
-                                <p style="color:#4caf7d; font-size:1.2rem; font-weight:bold;">$${p.price}</p>
-                                <p>Stok: ${p.stock}</p>
-                                <button class="btn" onclick="alert('${p.name} sepete eklendi!')">SEPETE EKLE</button>
+                                <h3 style="font-family:'Orbitron';">${inj.name}</h3>
+                                <p style="color:#aaa;">Motor: ${inj.engine}</p>
+                                <p style="color:#aaa;">Sürüm: ${inj.version}</p>
+                                <p style="color:#4caf7d; font-weight:bold; margin-top:10px;">DURUM: ${inj.status}</p>
+                                <button class="btn" onclick="alert('${inj.name} enjektör paketi indiriliyor...')">İNDİR / ENJEKTE ET</button>
                             </div>
                         `;
                     });
                 });
+
+                async function submitRequest() {
+                    const game = document.getElementById('reqGame').value;
+                    const res = await fetch('/api/user/request-injector', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({game})
+                    });
+                    const data = await res.json();
+                    alert(data.message);
+                    document.getElementById('reqGame').value = '';
+                }
             </script>
         </body>
     </html>
@@ -248,17 +278,17 @@ async def user_dashboard():
                 .chat { background: #000; height: 300px; border: 1px solid #262626; padding: 15px; overflow-y: auto; margin-top: 15px; }
                 input, button { padding: 10px; font-family: inherit; }
                 input { width: 75%; background: #000; color: #fff; border: 1px solid #262626; }
-                button { width: 22%; background: #3a86ff; color: #fff; border: none; cursor: pointer; font-family: 'Orbitron'; }
+                button { width: 22%; background: #ff007f; color: #fff; border: none; cursor: pointer; font-family: 'Orbitron'; }
             </style>
         </head>
         <body>
             <div class="box">
-                <h1 style="font-family:'Orbitron'; color:#3a86ff;">// KULLANICI & AI PORTALI</h1>
-                <p>Hoş geldiniz. Yapay zeka asistanından destek alabilir veya mağazayı ziyaret edebilirsiniz.</p>
-                <a href="/store" style="color:#3a86ff;">Mağazaya Git</a> | <a href="/" style="color:#aaa;">Çıkış Yap</a>
+                <h1 style="font-family:'Orbitron'; color:#ff007f;">// KULLANICI & AI PORTALI</h1>
+                <p>Hoş geldiniz. Enjektörler için mağazayı ziyaret edebilir veya AI asistanından destek alabilirsiniz.</p>
+                <a href="/store" style="color:#ff007f;">Enjektör Mağazasına Git</a> | <a href="/" style="color:#aaa;">Çıkış Yap</a>
                 
                 <h3 style="font-family:'Orbitron'; margin-top:20px;">🤖 Qwen AI Asistanı</h3>
-                <div class="chat" id="chatBox"><div style="color:#888;">AI Asistan hazır. Sorunuzu yazın...</div></div>
+                <div class="chat" id="chatBox"><div style="color:#888;">AI Başmühendis hazır. Sorunuzu yazın...</div></div>
                 <div style="margin-top:10px; display:flex; gap:10px;">
                     <input type="text" id="prompt" placeholder="AI'ya bir şeyler sor...">
                     <button onclick="sendAI()">GÖNDER</button>
@@ -277,7 +307,7 @@ async def user_dashboard():
                         body: JSON.stringify({prompt: p})
                     });
                     const data = await res.json();
-                    box.innerHTML += `<div style="color:#3a86ff; margin-top:5px;"><b>AI:</b> ${data.response}</div>`;
+                    box.innerHTML += `<div style="color:#ff007f; margin-top:5px;"><b>AI:</b> ${data.response}</div>`;
                     box.scrollTop = box.scrollHeight;
                 }
             </script>
@@ -285,13 +315,13 @@ async def user_dashboard():
     </html>
     """
 
-# --- GELİŞMİŞ YÖNETİCİ PANELİ (Otonom Self-Healing & Sistem Analizi) ---
+# --- GELİŞMİŞ YÖNETİCİ PANELİ ---
 @app.get("/admin-dashboard", response_class=HTMLResponse)
 async def admin_dashboard():
     return """
     <html>
         <head>
-            <title>Interform | Otonom Yönetici Paneli & Sistem Analizi</title>
+            <title>Interform | Otonom Yönetici Paneli</title>
             <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
             <style>
                 :root {
@@ -358,10 +388,10 @@ async def admin_dashboard():
         <body>
             <div class="admin-container">
                 <div class="admin-header">
-                    <div class="admin-logo">INTERFORM<span>.INC</span> // OTONOM SİSTEM YÖNETİMİ</div>
+                    <div class="admin-logo">INTERFORM<span>.INC</span> // ENJEKTÖR & SİSTEM YÖNETİMİ</div>
                     <div class="admin-nav">
                         <div class="badge">SELF-HEALING AI AKTİF</div>
-                        <a href="/store" class="logout-btn">MAĞAZA</a>
+                        <a href="/store" class="logout-btn">ENJEKTÖR MAĞAZASI</a>
                         <a href="/" class="logout-btn">ÇIKIŞ</a>
                     </div>
                 </div>
@@ -385,7 +415,7 @@ async def admin_dashboard():
                     </div>
                 </div>
 
-                <!-- OTONOM SİSTEM ANALİZİ & TEST BÖLÜMÜ -->
+                <!-- SİSTEM ANALİZİ & TEST BÖLÜMÜ -->
                 <div class="analysis-section">
                     <div class="panel-title" style="margin-bottom: 5px;">📊 CANLI SİSTEM ANALİZİ & OTONOM ONARIM KONTROLÜ</div>
                     <p style="color:var(--secondary); font-size: 0.9rem;">Yapay zeka asistanı sistem metriklerini izler. Test için hata enjekte edebilir, ardından AI'ya onartabilirsiniz.</p>
@@ -419,20 +449,20 @@ async def admin_dashboard():
                         <div class="logs-container" id="logsContainer">
                             <div class="log-line">[22:00:01] [INFO] FastAPI sunucu başarıyla başlatıldı.</div>
                             <div class="log-line">[22:00:05] [AUTH] admin@interform.inc root yetkisiyle bağlandı.</div>
-                            <div class="log-line">[22:00:12] [AI_CORE] Qwen-3.8-27b otonom onarım protokolü aktif.</div>
-                            <div class="log-line">[22:00:20] [SECURITY] Güvenlik duvarı taraması tamamlandı.</div>
+                            <div class="log-line">[22:00:12] [INJECTOR_CORE] Popüler oyun modülleri yüklendi.</div>
+                            <div class="log-line">[22:00:20] [SECURITY] Vanguard ve BattlEye bypass simülasyonu aktif.</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mgmt-grid">
                     <div class="mgmt-box">
-                        <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">📦 MAĞAZAYA ÜRÜN EKLE</h3>
-                        <input type="text" id="pName" placeholder="Ürün Adı">
-                        <input type="number" id="pPrice" placeholder="Fiyat ($)">
-                        <input type="text" id="pCategory" placeholder="Kategori">
-                        <input type="number" id="pStock" placeholder="Stok Adedi">
-                        <button class="mgmt-btn" onclick="addProduct()">ÜRÜNÜ SİSTEME KAYDET</button>
+                        <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">🎯 YENİ ENJEKTÖR MODÜLÜ EKLE</h3>
+                        <input type="text" id="injId" placeholder="ID (örn: pubg)">
+                        <input type="text" id="injName" placeholder="Oyun Adı">
+                        <input type="text" id="injEngine" placeholder="Oyun Motoru (Unreal vb.)">
+                        <input type="text" id="injVersion" placeholder="Sürüm (v1.0.0)">
+                        <button class="mgmt-btn" onclick="addInjectorModule()">ENJEKTÖRÜ SİSTEME EKLE</button>
                     </div>
 
                     <div class="mgmt-box">
@@ -487,7 +517,7 @@ async def admin_dashboard():
                     }
                 }
                 fetchSystemAnalysis();
-                setInterval(fetchSystemAnalysis, 5000); // Her 5 saniyede bir otomatik güncelle
+                setInterval(fetchSystemAnalysis, 5000);
 
                 async function injectFault() {
                     const res = await fetch('/api/admin/inject-fault', { method: 'POST' });
@@ -545,16 +575,16 @@ async def admin_dashboard():
                 function checkEnter(e) { if (e.key === 'Enter') { sendAiQuery(); } }
                 function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-                async function addProduct() {
-                    const name = document.getElementById('pName').value;
-                    const price = document.getElementById('pPrice').value;
-                    const category = document.getElementById('pCategory').value;
-                    const stock = document.getElementById('pStock').value;
+                async function addInjectorModule() {
+                    const id = document.getElementById('injId').value;
+                    const name = document.getElementById('injName').value;
+                    const engine = document.getElementById('injEngine').value;
+                    const version = document.getElementById('injVersion').value;
                     
-                    const res = await fetch('/api/admin/add-product', {
+                    const res = await fetch('/api/admin/add-injector', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({name, price, category, stock})
+                        body: JSON.stringify({id, name, engine, version})
                     });
                     const data = await res.json();
                     alert(data.message);
