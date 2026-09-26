@@ -9,13 +9,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from pymongo import MongoClient
-from passlib.context import CryptContext
+import bcrypt
 import requests
 
 app = FastAPI(title="Interform Inc. Platform", version="1.0.0")
-
-# Şifreleme (Password Hashing) altyapısı
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # MongoDB Bağlantısı
 MONGO_URI = os.environ.get("MONGO_URI", "")
@@ -35,7 +32,7 @@ ADMIN_USERNAME = "Administrator"
 ADMIN_PASSWORD = "admin123"
 ADMIN_INTERNAL_EMAIL = "administrator"
 
-# Groq AI Ayarları (OmniraAI'dan miras)
+# Groq AI Ayarları
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-20b")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -71,7 +68,7 @@ def serialize_user(u):
 def ensure_admin_accounts():
     if ADMIN_PASSWORD:
         existing = users_col.find_one({"email": ADMIN_INTERNAL_EMAIL})
-        hashed_pw = pwd_context.hash(ADMIN_PASSWORD)
+        hashed_pw = bcrypt.hashpw(ADMIN_PASSWORD.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         if existing:
             users_col.update_one(
                 {"email": ADMIN_INTERNAL_EMAIL},
@@ -88,7 +85,7 @@ def ensure_admin_accounts():
 
 ensure_admin_accounts()
 
-# Pydantic Modelleri (API İstekleri İçin)
+# Pydantic Modelleri
 class RegisterModel(BaseModel):
     name: str
     email: str
@@ -120,10 +117,12 @@ async def register(data: RegisterModel):
     if users_col.find_one({"email": email}):
         raise HTTPException(status_code=400, detail="Bu e-posta zaten kayıtlı.")
 
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
     users_col.insert_one({
         "name": name,
         "email": email,
-        "passwordHash": pwd_context.hash(password),
+        "passwordHash": hashed_password,
         "role": "user",
         "joinDate": now_iso(),
     })
@@ -143,7 +142,7 @@ async def login(data: LoginModel):
         return {"user": serialize_user(u)}
 
     u = users_col.find_one({"email": identifier})
-    if not u or not pwd_context.verify(password, u.get("passwordHash", "")):
+    if not u or not bcrypt.checkpw(password.encode('utf-8'), u.get("passwordHash", "").encode('utf-8')):
         raise HTTPException(status_code=401, detail="ACCESS DENIED")
 
     return {"user": serialize_user(u)}
@@ -180,7 +179,7 @@ async def chat(data: ChatModel):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- INTERFORM ÖZEL: OYUN İÇİ İNJECTOR & KATEGORİLER API'Sİ ---
+# --- İNJECTOR & KATEGORİLER API'Sİ ---
 @app.get("/api/cheats")
 async def get_cheats():
     cheats = list(cheats_col.find().sort("game", 1))
@@ -202,7 +201,7 @@ async def add_cheat(data: dict):
     res = cheats_col.insert_one(doc)
     return {"success": True, "id": str(res.inserted_id)}
 
-# --- INTERFORM ÖZEL: OYUN KEYLERİ MAĞAZASI API'Sİ ---
+# --- OYUN KEYLERİ MAĞAZASI API'Sİ ---
 @app.get("/api/store")
 async def get_store_products():
     products = list(store_col.find().sort("title", 1))
