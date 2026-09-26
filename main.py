@@ -37,47 +37,92 @@ USERS = {
     }
 }
 
-# --- ANA SAYFA (GİRİŞ / KAYIT) ---
+# --- 1. NORMAL KURUMSAL ANA SAYFA (GİRİŞ / KAYIT VE KURUMSAL TANITIM) ---
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     return """
     <html>
         <head>
-            <title>Interform Inc. | Steam Lisans ve Yönetim Paneli</title>
+            <title>Interform Inc. | Otonom Kurumsal Çözümler</title>
             <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet">
             <style>
-                body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                .auth-box { background: #111; border: 1px solid #262626; padding: 40px; width: 400px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-                h1 { font-family: 'Orbitron'; color: #3a86ff; font-size: 1.5rem; text-align: center; margin-bottom: 25px; }
-                input { width: 100%; padding: 12px; margin-top: 10px; background: #000; border: 1px solid #262626; color: #fff; font-family: inherit; }
-                .btn { background: #3a86ff; color: #fff; border: none; padding: 12px; margin-top: 20px; width: 100%; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; }
+                body { background: #070707; color: #fff; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 0; }
+                .hero { display: flex; justify-content: space-between; align-items: center; padding: 50px 80px; border-bottom: 1px solid #262626; }
+                .hero-text h1 { font-family: 'Orbitron'; color: #3a86ff; font-size: 2.5rem; margin-bottom: 15px; }
+                .hero-text p { color: #aaa; font-size: 1.1rem; max-width: 600px; line-height: 1.6; }
+                .auth-box { background: #111; border: 1px solid #262626; padding: 30px; width: 350px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+                .auth-box h2 { font-family: 'Orbitron'; color: #3a86ff; font-size: 1.2rem; margin-bottom: 20px; text-align: center; }
+                input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #262626; color: #fff; font-family: inherit; }
+                .btn { background: #3a86ff; color: #fff; border: none; padding: 12px; margin-top: 15px; width: 100%; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; }
                 .btn:hover { background: #2670e8; }
-                .toggle-link { text-align: center; margin-top: 15px; font-size: 0.9rem; color: #888; cursor: pointer; }
+                .toggle-link { text-align: center; margin-top: 15px; font-size: 0.85rem; color: #888; cursor: pointer; }
                 .toggle-link span { color: #3a86ff; text-decoration: underline; }
+                
+                .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; padding: 60px 80px; }
+                .feature-card { background: #111; border: 1px solid #262626; padding: 30px; }
+                .feature-card h3 { font-family: 'Orbitron'; color: #fff; font-size: 1.1rem; margin-bottom: 10px; }
+                .feature-card p { color: #888; font-size: 0.95rem; line-height: 1.5; }
+                .nav-bar { display: flex; justify-content: space-between; align-items: center; padding: 20px 80px; border-bottom: 1px solid #262626; background: #0b0b0b; }
+                .nav-links a { color: #aaa; text-decoration: none; margin-left: 20px; font-family: 'Orbitron'; font-size: 0.85rem; }
+                .nav-links a:hover { color: #3a86ff; }
             </style>
         </head>
         <body>
-            <div class="auth-box">
-                <h1 id="formTitle">// GİRİŞ YAP</h1>
-                <div id="errorMsg" style="color:#ff5555; font-size:0.9rem; margin-bottom:10px; display:none;"></div>
-                
-                <div id="nameField" style="display:none;">
-                    <input type="text" id="name" placeholder="Ad Soyad / Şirket Unvanı">
+            <div class="nav-bar">
+                <div style="font-family:'Orbitron'; font-weight:bold; font-size:1.2rem; color:#3a86ff;">INTERFORM.INC</div>
+                <div class="nav-links">
+                    <a href="/">Anasayfa</a>
+                    <a href="/store">Steam Mağazası</a>
+                    <a href="/admin-dashboard">Yönetim Paneli</a>
                 </div>
-                <input type="email" id="email" placeholder="E-posta Adresi">
-                <input type="password" id="password" placeholder="Şifre">
-                
-                <button class="btn" id="submitBtn" onclick="handleAuth()">SİSTEME BAĞLAN</button>
-                <div class="toggle-link" onclick="toggleMode()"><span id="toggleText">Hesabınız yok mu? Kayıt olun.</span></div>
+            </div>
+
+            <div class="hero">
+                <div class="hero-text">
+                    <h1>YENİ NESİL OTONOM <br>SİSTEM YÖNETİMİ</h1>
+                    <p>Interform Inc., kurumsal altyapılar ve dijital envanterler için yapay zeka destekli otonom denetim ve dağıtım ağları sunar. Güvenli, kesintisiz ve yüksek performanslı çözümlerle tanışın.</p>
+                    <div style="margin-top: 30px;">
+                        <a href="/store" class="btn" style="display:inline-block; width:auto; padding:12px 25px; text-decoration:none; text-align:center;">STEAM MAĞAZASINA GİT →</a>
+                    </div>
+                </div>
+
+                <div class="auth-box">
+                    <h2 id="formTitle">// SİSTEM GİRİŞİ</h2>
+                    <div id="errorMsg" style="color:#ff5555; font-size:0.85rem; margin-bottom:10px; display:none;"></div>
+                    
+                    <div id="nameField" style="display:none;">
+                        <input type="text" id="name" placeholder="Ad Soyad / Şirket">
+                    </div>
+                    <input type="email" id="email" placeholder="E-posta Adresi">
+                    <input type="password" id="password" placeholder="Şifre">
+                    
+                    <button class="btn" id="submitBtn" onclick="handleAuth()">GİRİŞ YAP</button>
+                    <div class="toggle-link" onclick="toggleMode()"><span id="toggleText">Hesabınız yok mu? Kayıt olun.</span></div>
+                </div>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <h3>Otonom Onarım</h3>
+                    <p>Yapay zeka çekirdeğimiz sistem anormalliklerini milisaniyeler içinde tespit eder ve manuel müdahaleye gerek kalmadan onarır.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Steam Aile Dağıtımı</h3>
+                    <p>En popüler AAA ve bağımsız oyun lisanslarını güvenli aile havuzu protokolleriyle anında entegre edin ve kiralayın.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Kurumsal Güvenlik</h3>
+                    <p>Gelişmiş şifreleme ve rol tabanlı yetkilendirme (RBAC) ile tüm varlıklarınız güvence altında tutulur.</p>
+                </div>
             </div>
 
             <script>
                 let isRegister = false;
                 function toggleMode() {
                     isRegister = !isRegister;
-                    document.getElementById('formTitle').innerText = isRegister ? "// YENİ HESAP OLUŞTUR" : "// GİRİŞ YAP";
+                    document.getElementById('formTitle').innerText = isRegister ? "// YENİ HESAP OLUŞTUR" : "// SİSTEM GİRİŞİ";
                     document.getElementById('nameField').style.display = isRegister ? "block" : "none";
-                    document.getElementById('submitBtn').innerText = isRegister ? "KAYIT OL VE BAŞLA" : "SİSTEME BAĞLAN";
+                    document.getElementById('submitBtn').innerText = isRegister ? "KAYIT OL" : "GİRİŞ YAP";
                     document.getElementById('toggleText').innerText = isRegister ? "Zaten hesabınız var mı? Giriş yapın." : "Hesabınız yok mu? Kayıt olun.";
                 }
 
@@ -129,7 +174,6 @@ async def api_register(request: Request):
     if email in USERS:
         raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kayıtlı.")
 
-    # Yeni kayıt olanlar standart 'Üye' olarak başlar
     USERS[email] = {"password": password, "role": "Üye", "name": name}
     return {"status": "success", "message": "Kayıt başarılı. Giriş yapabilirsiniz."}
 
@@ -150,7 +194,7 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- MAĞAZA VE SEPET API'LERİ ---
+# --- 2. STEAM MAĞAZA API VE SAYFASI ---
 @app.get("/api/steam-accounts")
 async def get_steam_accounts():
     return {"accounts": STEAM_ACCOUNTS}
@@ -191,7 +235,6 @@ async def checkout(request: Request):
 
     if not card_number or not card_expiry or not card_cvv:
         raise HTTPException(status_code=400, detail="Lütfen tüm kart bilgilerini eksiksiz doldurun.")
-    
     if len(card_number) < 16:
         raise HTTPException(status_code=400, detail="Geçersiz kart numarası.")
 
@@ -215,99 +258,10 @@ async def checkout(request: Request):
     if email not in USER_ORDERS:
         USER_ORDERS[email] = []
     USER_ORDERS[email].extend(purchased_licenses)
-    
     USER_CARTS[email] = []
     
-    return {
-        "status": "success", 
-        "message": "Ödemeniz başarıyla tahsil edildi! Lisans anahtarlarınız oluşturuldu."
-    }
+    return {"status": "success", "message": "Ödemeniz başarıyla tahsil edildi! Lisans anahtarlarınız oluşturuldu."}
 
-# --- ADMIN API'LERİ ---
-@app.post("/api/admin/add-steam-account")
-async def add_steam_account(request: Request):
-    data = await request.json()
-    new_id = len(STEAM_ACCOUNTS) + 1
-    STEAM_ACCOUNTS.append({
-        "id": new_id,
-        "name": data.get("name"),
-        "price": float(data.get("price", 0)),
-        "category": data.get("category", "AAA Oyun"),
-        "stock": int(data.get("stock", 5)),
-        "type": "Steam Aile Paylaşımı (Güvenli Kilitli)"
-    })
-    return {"status": "success", "message": "Steam aile hesabı envantere başarıyla eklendi."}
-
-@app.post("/api/admin/update-rank")
-async def update_rank(request: Request):
-    data = await request.json()
-    email = data.get("email", "").strip().lower()
-    rank = data.get("rank")
-    admin_secret = data.get("adminSecret", "")
-
-    if rank == "Administrator" and admin_secret != "admin123":
-        raise HTTPException(status_code=403, detail="Administrator yetkisi için doğru admin şifresi gerekli.")
-
-    if email in USERS:
-        USERS[email]["role"] = rank
-        return {"status": "success", "message": f"{email} kullanıcısının rütbesi başarıyla {rank} olarak güncellendi."}
-    raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
-
-@app.get("/api/admin/system-analysis")
-async def get_system_analysis():
-    total_stock = sum(acc["stock"] for acc in STEAM_ACCOUNTS)
-    total_users = len(USERS)
-    return {
-        "cpu_usage": SYSTEM_STATE["cpu"],
-        "ram_usage": SYSTEM_STATE["ram"],
-        "disk_io": "0.8 MB/s",
-        "active_threads": 42,
-        "database_status": SYSTEM_STATE["status"],
-        "security_threats": SYSTEM_STATE["active_threats"],
-        "total_stock": total_stock,
-        "total_users": total_users
-    }
-
-@app.post("/api/admin/inject-fault")
-async def inject_fault():
-    SYSTEM_STATE["status"] = "KRİTİK UYARI (Hesap Havuzu Senkronizasyon Hatası)"
-    SYSTEM_STATE["cpu"] = "%88.5 (Aşırı İstek)"
-    SYSTEM_STATE["active_threats"] = 1
-    SYSTEM_STATE["memory_leak_simulated"] = True
-    return {"status": "success", "message": "Simüle edilmiş hata sisteme enjekte edildi."}
-
-@app.post("/api/ai-query")
-async def ai_query(request: Request):
-    data = await request.json()
-    prompt = data.get("prompt", "").lower()
-    
-    action_taken = ""
-    if "onar" in prompt or "fix" in prompt or "çöz" in prompt or "optimize" in prompt:
-        SYSTEM_STATE["status"] = "STABİL"
-        SYSTEM_STATE["cpu"] = "14.2%"
-        SYSTEM_STATE["ram"] = "3.8 GB / 16 GB"
-        SYSTEM_STATE["active_threats"] = 0
-        SYSTEM_STATE["memory_leak_simulated"] = False
-        action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği veritabanını senkronize etti ve sistemi stabil hale getirdi."
-
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        return {"response": f"[SİSTEM UYARISI]: GROQ_API_KEY bulunamadı! Simüle Edilen AI Yanıtı: İşlem başarıyla tamamlandı.{action_taken}"}
-    
-    try:
-        client = Groq(api_key=api_key)
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": "Sen Interform Inc.'in tam yetkili, otonom başmühendisisin."},
-                {"role": "user", "content": data.get("prompt", "")}
-            ],
-            model="qwen/qwen3.8-27b",
-        )
-        return {"response": chat_completion.choices[0].message.content + action_taken}
-    except Exception as e:
-        return {"response": f"AI Servis Hatası: {str(e)}{action_taken}"}
-
-# --- MAĞAZA SAYFASI ---
 @app.get("/store", response_class=HTMLResponse)
 async def store_page():
     return """
@@ -341,6 +295,7 @@ async def store_page():
                     <h1 style="font-family:'Orbitron'; color:#3a86ff; font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
                     <div>
                         <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px;"></span>
+                        <a href="/" class="nav-link">ANA SAYFA</a>
                         <a href="/admin-dashboard" id="adminLink" class="nav-link" style="display:none;">YÖNETİM PANELİ</a>
                         <a href="/" class="nav-link" style="color:#ff5555;">ÇIKIŞ</a>
                     </div>
@@ -384,7 +339,6 @@ async def store_page():
                 const userRole = localStorage.getItem('userRole') || "Üye";
                 document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail} (${userRole})`;
 
-                // Sadece admin/yetkili rollerine yönetim paneli linkini göster
                 if (["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"].includes(userRole)) {
                     document.getElementById('adminLink').style.display = 'inline';
                 }
@@ -416,11 +370,7 @@ async def store_page():
                         body: JSON.stringify({id: id, email: userEmail})
                     });
                     const data = await res.json();
-                    if(res.ok) {
-                        loadStore();
-                    } else {
-                        alert(data.detail);
-                    }
+                    if(res.ok) { loadStore(); } else { alert(data.detail); }
                 }
 
                 async function loadCart() {
@@ -454,13 +404,8 @@ async def store_page():
                     }
                 }
 
-                function openCheckoutModal() {
-                    document.getElementById('checkoutModal').style.display = 'flex';
-                }
-
-                function closeCheckoutModal() {
-                    document.getElementById('checkoutModal').style.display = 'none';
-                }
+                function openCheckoutModal() { document.getElementById('checkoutModal').style.display = 'flex'; }
+                function closeCheckoutModal() { document.getElementById('checkoutModal').style.display = 'none'; }
 
                 async function processCheckout() {
                     const card_number = document.getElementById('cardNumber').value;
@@ -492,12 +437,92 @@ async def store_page():
     </html>
     """
 
-# --- YÖNETİCİ PANELİ (GÜVENLİ ROL KONTROLÜ İLE) ---
+# --- 3. YÖNETİCİ PANELİ (GÜVENLİ ROL KONTROLÜ İLE) ---
+@app.post("/api/admin/add-steam-account")
+async def add_steam_account(request: Request):
+    data = await request.json()
+    new_id = len(STEAM_ACCOUNTS) + 1
+    STEAM_ACCOUNTS.append({
+        "id": new_id,
+        "name": data.get("name"),
+        "price": float(data.get("price", 0)),
+        "category": data.get("category", "AAA Oyun"),
+        "stock": int(data.get("stock", 5)),
+        "type": "Steam Aile Paylaşımı"
+    })
+    return {"status": "success", "message": "Steam aile hesabı envantere başarıyla eklendi."}
+
+@app.post("/api/admin/update-rank")
+async def update_rank(request: Request):
+    data = await request.json()
+    email = data.get("email", "").strip().lower()
+    rank = data.get("rank")
+    admin_secret = data.get("adminSecret", "")
+
+    if rank == "Administrator" and admin_secret != "admin123":
+        raise HTTPException(status_code=403, detail="Administrator yetkisi için doğru admin şifresi gerekli.")
+
+    if email in USERS:
+        USERS[email]["role"] = rank
+        return {"status": "success", "message": f"{email} kullanıcısının rütbesi başarıyla {rank} olarak güncellendi."}
+    raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+
+@app.get("/api/admin/system-analysis")
+async def get_system_analysis():
+    total_stock = sum(acc["stock"] for acc in STEAM_ACCOUNTS)
+    total_users = len(USERS)
+    return {
+        "cpu_usage": SYSTEM_STATE["cpu"],
+        "ram_usage": SYSTEM_STATE["ram"],
+        "disk_io": "0.8 MB/s",
+        "active_threads": 42,
+        "database_status": SYSTEM_STATE["status"],
+        "security_threats": SYSTEM_STATE["active_threats"],
+        "total_stock": total_stock,
+        "total_users": total_users
+    }
+
+@app.post("/api/admin/inject-fault")
+async def inject_fault():
+    SYSTEM_STATE["status"] = "KRİTİK UYARI (Senkronizasyon Hatası)"
+    SYSTEM_STATE["cpu"] = "%88.5"
+    SYSTEM_STATE["active_threats"] = 1
+    SYSTEM_STATE["memory_leak_simulated"] = True
+    return {"status": "success", "message": "Simüle edilmiş hata sisteme enjekte edildi."}
+
+@app.post("/api/ai-query")
+async def ai_query(request: Request):
+    data = await request.json()
+    prompt = data.get("prompt", "").lower()
+    
+    action_taken = ""
+    if "onar" in prompt or "fix" in prompt or "çöz" in prompt or "optimize" in prompt:
+        SYSTEM_STATE["status"] = "STABİL"
+        SYSTEM_STATE["cpu"] = "14.2%"
+        SYSTEM_STATE["ram"] = "3.8 GB / 16 GB"
+        SYSTEM_STATE["active_threats"] = 0
+        SYSTEM_STATE["memory_leak_simulated"] = False
+        action_taken = "\n\n[OTONOM İŞLEM BAŞARILI]: AI çekirdeği veritabanını senkronize etti."
+
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        return {"response": f"[SİSTEM UYARISI]: GROQ_API_KEY bulunamadı! Simüle Edilen AI Yanıtı: İşlem tamamlandı.{action_taken}"}
+    
+    try:
+        client = Groq(api_key=api_key)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": "Sen Interform Inc.'in tam yetkili, otonom başmühendisisin."},
+                {"role": "user", "content": data.get("prompt", "")}
+            ],
+            model="qwen/qwen3.8-27b",
+        )
+        return {"response": chat_completion.choices[0].message.content + action_taken}
+    except Exception as e:
+        return {"response": f"AI Servis Hatası: {str(e)}{action_taken}"}
+
 @app.get("/admin-dashboard", response_class=HTMLResponse)
 async def admin_dashboard(request: Request):
-    # Not: Gerçek senaryoda session veya cookie bakılır, 
-    # ancak bu simülasyonda örnek koruma mantığı eklenmiştir.
-    # Güvenlik için yetkisiz kullanıcılar mağazaya yönlendirilir.
     return """
     <html>
         <head>
@@ -559,7 +584,6 @@ async def admin_dashboard(request: Request):
         </head>
         <body>
             <script>
-                // Yetkisiz kullanıcıların panele girmesini engelle
                 const currentRole = localStorage.getItem('userRole') || "Üye";
                 const allowedRoles = ["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"];
                 if (!allowedRoles.includes(currentRole)) {
@@ -574,7 +598,7 @@ async def admin_dashboard(request: Request):
                     <div class="admin-nav">
                         <div class="badge">SELF-HEALING AI AKTİF</div>
                         <a href="/store" class="logout-btn">STEAM MAĞAZA</a>
-                        <a href="/" class="logout-btn">ÇIKIŞ</a>
+                        <a href="/" class="logout-btn">ANA SAYFA</a>
                     </div>
                 </div>
 
@@ -607,16 +631,16 @@ async def admin_dashboard(request: Request):
                     </div>
                     <div class="action-bar">
                         <button class="sys-btn" onclick="fetchSystemAnalysis()">🔄 METRİKLERİ YENİLE</button>
-                        <button class="sys-btn danger" onclick="injectFault()">⚠️ SİSTEME HATA ENJEKTE ET (TEST)</button>
+                        <button class="sys-btn danger" onclick="injectFault()">⚠️ SİSTEME HATA ENJEKTE ET</button>
                         <button class="sys-btn" style="border-color:#3a86ff; color:#3a86ff;" onclick="askAiToHeal()">🤖 AI OTONOM ONARIM BAŞLAT</button>
                     </div>
                 </div>
 
                 <div class="workspace-grid">
                     <div class="panel-card">
-                        <div class="panel-title">🤖 TAM YETKİLİ YAPAY ZEKA ASİSTANI</div>
+                        <div class="panel-title">🤖 YAPAY ZEKA ASİSTANI</div>
                         <div class="ai-chat-box" id="chatBox">
-                            <div class="ai-msg system">Otonom AI Başmühendis hazır. "Sistemi tara ve onar" diyerek hesap havuzunu optimize edebilirsiniz.</div>
+                            <div class="ai-msg system">Otonom AI Başmühendis hazır. Komut verebilirsiniz.</div>
                         </div>
                         <div class="ai-input-group">
                             <input type="text" id="aiPrompt" class="ai-input" placeholder="AI'ya komut ver..." onkeypress="checkEnter(event)">
@@ -628,8 +652,7 @@ async def admin_dashboard(request: Request):
                         <div class="panel-title">🛡️ CANLI SİSTEM LOGLARI</div>
                         <div class="logs-container" id="logsContainer">
                             <div class="log-line">[22:00:01] [INFO] FastAPI sunucu başarıyla başlatıldı.</div>
-                            <div class="log-line">[22:00:05] [AUTH] admin@interform.inc root yetkisiyle bağlandı.</div>
-                            <div class="log-line">[22:00:20] [SECURITY] E-posta/Şifre koruma kilidi aktif.</div>
+                            <div class="log-line">[22:00:05] [AUTH] Sistem aktif.</div>
                         </div>
                     </div>
                 </div>
@@ -637,7 +660,7 @@ async def admin_dashboard(request: Request):
                 <div class="mgmt-grid">
                     <div class="mgmt-box">
                         <h3 style="font-family:'Orbitron'; color:var(--accent); font-size: 0.9rem;">📦 YENİ STEAM HESABI EKLE</h3>
-                        <input type="text" id="sName" placeholder="Oyun Adı (örn: RDR2 Aile Hesabı)">
+                        <input type="text" id="sName" placeholder="Oyun Adı">
                         <input type="number" id="sPrice" placeholder="Fiyat ($)">
                         <input type="text" id="sCategory" placeholder="Kategori">
                         <input type="number" id="sStock" placeholder="Stok Adedi">
@@ -653,7 +676,7 @@ async def admin_dashboard(request: Request):
                             <option value="Mağaza Yetkilisi">Mağaza Yetkilisi</option>
                             <option value="Üye">Üye</option>
                         </select>
-                        <input type="password" id="adminSecret" placeholder="Admin Şifresi (Sadece Admin için)">
+                        <input type="password" id="adminSecret" placeholder="Admin Şifresi">
                         <button class="mgmt-btn" onclick="updateRank()">RÜTKEYİ GÜNCELLE</button>
                     </div>
                 </div>
@@ -674,10 +697,6 @@ async def admin_dashboard(request: Request):
                     const statStatus = document.getElementById('statStatus');
                     statStatus.innerText = data.database_status;
                     statStatus.className = data.database_status.includes("KRİTİK") ? "stat-value warning" : "stat-value green";
-
-                    const statThreats = document.getElementById('statThreats');
-                    statThreats.innerText = data.security_threats > 0 ? `ALARM (${data.security_threats} Tehdit)` : "AKTİF (0 Tehdit)";
-                    statThreats.className = data.security_threats > 0 ? "stat-value warning" : "stat-value green";
                 }
                 fetchSystemAnalysis();
                 setInterval(fetchSystemAnalysis, 5000);
@@ -686,7 +705,6 @@ async def admin_dashboard(request: Request):
                     const res = await fetch('/api/admin/inject-fault', { method: 'POST' });
                     const data = await res.json();
                     alert(data.message);
-                    document.getElementById('logsContainer').innerHTML += `<div class="log-line" style="color:#ffaa00;">[WARNING] Hesap senkronizasyon hatası enjekte edildi!</div>`;
                     fetchSystemAnalysis();
                 }
 
@@ -735,7 +753,7 @@ async def admin_dashboard(request: Request):
 
                 async function updateRank() {
                     const email = document.getElementById('targetEmail').value;
-                    const rank = document.getElementById('targetRank'].value;
+                    const rank = document.getElementById('targetRank').value;
                     const adminSecret = document.getElementById('adminSecret').value;
 
                     const res = await fetch('/api/admin/update-rank', {
