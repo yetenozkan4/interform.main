@@ -37,7 +37,7 @@ USERS = {
     }
 }
 
-# --- 1. ESKİ DETAYLI VE OTONOM KURUMSAL ANA SAYFA (Formsuz, Eski Kategorilerle) ---
+# --- 1. KURUMSAL ANA SAYFA (Formsuz, Eski Kategorilerle) ---
 @app.get("/", response_class=HTMLResponse)
 async def read_index(request: Request):
     return """
@@ -174,7 +174,7 @@ async def read_index(request: Request):
     </html>
     """
 
-# --- 2. GİRİŞ/KAYIT API'LERİ (Mağaza ve Panel arkasında kullanılmaya devam ediyor) ---
+# --- 2. GİRİŞ/KAYIT API'LERİ ---
 @app.post("/api/register")
 async def api_register(request: Request):
     data = await request.json()
@@ -207,7 +207,7 @@ async def api_login(request: Request):
 
     return {"status": "success", "role": user["role"], "redirect": redirect_url, "email": email}
 
-# --- 3. STEAM MAĞAZA API VE SAYFASI (/store) ---
+# --- 3. STEAM MAĞAZA API VE SAYFASI (/store - Giriş/Kayıt ve Çıkış Entegreli) ---
 @app.get("/api/steam-accounts")
 async def get_steam_accounts():
     return {"accounts": STEAM_ACCOUNTS}
@@ -294,9 +294,16 @@ async def store_page():
                 .btn:hover { background: #2670e8; }
                 .cart-box { background: var(--surface); border: 1px solid var(--accent); padding: 25px; margin-top: 40px; }
                 .warning-note { background: #1a1a1a; border-left: 3px solid #ffaa00; padding: 15px; margin-top: 20px; font-size: 0.95rem; color: #ccc; }
-                .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; }
+                .nav-link { color: #aaa; text-decoration: none; margin-left: 15px; font-family: 'Orbitron'; font-size: 0.8rem; cursor: pointer; }
+                .nav-link:hover { color: #fff; }
                 .license-box { background: #0b1a10; border: 1px solid var(--success); padding: 20px; margin-top: 40px; }
                 
+                .auth-container { background: var(--surface); border: 1px solid var(--border); padding: 30px; max-width: 450px; margin: 50px auto; }
+                .auth-container input { width: 100%; padding: 12px; margin-top: 12px; background: #000; border: 1px solid var(--border); color: #fff; font-family: inherit; }
+                .auth-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+                .tab-btn { flex: 1; background: #1a1a1a; border: 1px solid var(--border); color: #aaa; padding: 10px; font-family: 'Orbitron'; cursor: pointer; }
+                .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
                 .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
                 .modal-content { background: var(--surface); border: 1px solid var(--accent); padding: 30px; width: 400px; box-shadow: 0 0 30px rgba(58,134,255,0.3); }
                 .modal input { width: 100%; padding: 10px; margin-top: 10px; background: #000; border: 1px solid #333; color: #fff; font-family: inherit; }
@@ -308,29 +315,49 @@ async def store_page():
                 <div class="header-flex">
                     <h1 style="font-family:'Orbitron'; color:var(--accent); font-size:1.4rem;">// STEAM AİLE PAYLAŞIMI MAĞAZASI</h1>
                     <div>
-                        <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px;"></span>
+                        <span id="userDisplay" style="color:#aaa; font-size:0.9rem; margin-right:15px; display:none;"></span>
                         <a href="/" class="nav-link">ANA SAYFA</a>
                         <a href="/admin-dashboard" id="adminLink" class="nav-link" style="display:none;">YÖNETİM PANELİ</a>
-                        <a href="/" class="nav-link" style="color:#ff5555;">ÇIKIŞ</a>
+                        <a href="#" id="logoutBtn" class="nav-link" style="color:#ff5555; display:none;" onclick="logout()">ÇIKIŞ YAP</a>
                     </div>
                 </div>
-                
-                <div class="warning-note">
-                    <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. Ödeme aşamasında kart bilgileriniz şifrelenerek işlenir.
+
+                <!-- GİRİŞ / KAYIT FORMU (Oturum açılmadıysa görünür) -->
+                <div id="authSection" class="auth-container" style="display:none;">
+                    <div class="auth-tabs">
+                        <button class="tab-btn active" id="loginTabBtn" onclick="switchTab('login')">GİRİŞ YAP</button>
+                        <button class="tab-btn" id="registerTabBtn" onclick="switchTab('register')">KAYIT OL</button>
+                    </div>
+                    <div id="authError" style="color:#ff5555; font-size:0.85rem; margin-bottom:10px; display:none;"></div>
+                    
+                    <div id="registerFields" style="display:none;">
+                        <input type="text" id="regName" placeholder="Adınız Soyadınız">
+                    </div>
+                    <input type="email" id="authEmail" placeholder="E-posta Adresi">
+                    <input type="password" id="authPassword" placeholder="Şifre">
+                    
+                    <button class="btn" id="authSubmitBtn" onclick="handleAuth()">GİRİŞ YAP</button>
                 </div>
 
-                <div class="grid" id="steamGrid"></div>
+                <!-- MAĞAZA İÇERİĞİ (Oturum açıldıysa görünür) -->
+                <div id="storeContent" style="display:none;">
+                    <div class="warning-note">
+                        <b>⚠️ Güvenlik Protokolü:</b> Tüm hesaplar Steam Aile Paylaşımı (Family Sharing) ile verilir. Ödeme aşamasında kart bilgileriniz şifrelenerek işlenir.
+                    </div>
 
-                <div class="cart-box">
-                    <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
-                    <div id="cartItems" style="margin-top:15px; color:#aaa;">Sepetiniz henüz boş.</div>
-                    <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:var(--success);"></div>
-                    <button class="btn" id="checkoutBtn" style="display:none; background:var(--success);" onclick="openCheckoutModal()">GÜVENLİ ÖDEME EKRANINI AÇ</button>
-                </div>
+                    <div class="grid" id="steamGrid"></div>
 
-                <div class="license-box" id="licenseSection" style="display:none;">
-                    <h2 style="font-family:'Orbitron'; color:var(--success); font-size:1.2rem;">🔑 SATIN ALINAN LİSANS ANAHTARLARINIZ</h2>
-                    <div id="licenseList" style="margin-top:15px;"></div>
+                    <div class="cart-box">
+                        <h2 style="font-family:'Orbitron'; color:var(--accent); font-size:1.2rem;">🛍️ SEPETİNİZ VE ÖDEME</h2>
+                        <div id="cartItems" style="margin-top:15px; color:#aaa;">Sepetiniz henüz boş.</div>
+                        <div id="cartTotal" style="font-family:'Orbitron'; font-size:1.2rem; margin-top:15px; color:var(--success);"></div>
+                        <button class="btn" id="checkoutBtn" style="display:none; background:var(--success);" onclick="openCheckoutModal()">GÜVENLİ ÖDEME EKRANINI AÇ</button>
+                    </div>
+
+                    <div class="license-box" id="licenseSection" style="display:none;">
+                        <h2 style="font-family:'Orbitron'; color:var(--success); font-size:1.2rem;">🔑 SATIN ALINAN LİSANS ANAHTARLARINIZ</h2>
+                        <div id="licenseList" style="margin-top:15px;"></div>
+                    </div>
                 </div>
             </div>
 
@@ -349,15 +376,81 @@ async def store_page():
             </div>
 
             <script>
-                const userEmail = localStorage.getItem('userEmail') || "guest@interform.inc";
-                const userRole = localStorage.getItem('userRole') || "Üye";
-                document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail} (${userRole})`;
+                let isLoginMode = true;
 
-                if (["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"].includes(userRole)) {
-                    document.getElementById('adminLink').style.display = 'inline';
+                function switchTab(mode) {
+                    isLoginMode = (mode === 'login');
+                    document.getElementById('loginTabBtn').className = isLoginMode ? 'tab-btn active' : 'tab-btn';
+                    document.getElementById('registerTabBtn').className = !isLoginMode ? 'tab-btn active' : 'tab-btn';
+                    document.getElementById('registerFields').style.display = isLoginMode ? 'none' : 'block';
+                    document.getElementById('authSubmitBtn').innerText = isLoginMode ? 'GİRİŞ YAP' : 'KAYIT OL';
+                    document.getElementById('authError').style.display = 'none';
+                }
+
+                async function handleAuth() {
+                    const email = document.getElementById('authEmail').value;
+                    const password = document.getElementById('authPassword').value;
+                    const name = document.getElementById('regName').value;
+                    const errorBox = document.getElementById('authError');
+                    errorBox.style.display = 'none';
+
+                    const endpoint = isLoginMode ? '/api/login' : '/api/register';
+                    const payload = isLoginMode ? {email, password} : {email, password, name};
+
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json();
+
+                    if(res.ok) {
+                        if(isLoginMode) {
+                            localStorage.setItem('userEmail', data.email);
+                            localStorage.setItem('userRole', data.role);
+                            checkSession();
+                        } else {
+                            alert(data.message);
+                            switchTab('login');
+                        }
+                    } else {
+                        errorBox.innerText = data.detail;
+                        errorBox.style.display = 'block';
+                    }
+                }
+
+                function checkSession() {
+                    const userEmail = localStorage.getItem('userEmail');
+                    const userRole = localStorage.getItem('userRole');
+
+                    if(userEmail) {
+                        document.getElementById('authSection').style.display = 'none';
+                        document.getElementById('storeContent').style.display = 'block';
+                        document.getElementById('userDisplay').style.display = 'inline';
+                        document.getElementById('logoutBtn').style.display = 'inline';
+                        document.getElementById('userDisplay').innerText = `Kullanıcı: ${userEmail} (${userRole || 'Üye'})`;
+
+                        if (["Administrator", "Yönetim Kurulu", "BT Genel Sorumlu", "Mağaza Genel Sorumlu", "Mağaza Yetkilisi", "BT Yetkilisi", "Genel Yetkili", "Yetkili"].includes(userRole)) {
+                            document.getElementById('adminLink').style.display = 'inline';
+                        }
+                        loadStore();
+                    } else {
+                        document.getElementById('authSection').style.display = 'block';
+                        document.getElementById('storeContent').style.display = 'none';
+                        document.getElementById('userDisplay').style.display = 'none';
+                        document.getElementById('logoutBtn').style.display = 'none';
+                        document.getElementById('adminLink').style.display = 'none';
+                    }
+                }
+
+                function logout() {
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userRole');
+                    checkSession();
                 }
 
                 async function loadStore() {
+                    const userEmail = localStorage.getItem('userEmail') || "guest@interform.inc";
                     const res = await fetch('/api/steam-accounts');
                     const data = await res.json();
                     const grid = document.getElementById('steamGrid');
@@ -378,6 +471,7 @@ async def store_page():
                 }
 
                 async function addToCart(id) {
+                    const userEmail = localStorage.getItem('userEmail');
                     const res = await fetch('/api/cart/add', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
@@ -388,6 +482,7 @@ async def store_page():
                 }
 
                 async function loadCart() {
+                    const userEmail = localStorage.getItem('userEmail');
                     const res = await fetch(`/api/cart/${userEmail}`);
                     const data = await res.json();
                     const cartDiv = document.getElementById('cartItems');
@@ -422,6 +517,7 @@ async def store_page():
                 function closeCheckoutModal() { document.getElementById('checkoutModal').style.display = 'none'; }
 
                 async function processCheckout() {
+                    const userEmail = localStorage.getItem('userEmail');
                     const card_number = document.getElementById('cardNumber').value;
                     const card_expiry = document.getElementById('cardExpiry').value;
                     const card_cvv = document.getElementById('cardCvv').value;
@@ -445,7 +541,7 @@ async def store_page():
                     }
                 }
 
-                loadStore();
+                checkSession();
             </script>
         </body>
     </html>
