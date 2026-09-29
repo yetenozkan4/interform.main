@@ -38,9 +38,9 @@
   .hero-title span { color: var(--accent); }
   .hero-desc { max-width: 750px; font-size: 1.2rem; color: var(--secondary); line-height: 1.7; margin-bottom: 45px; }
   .hero-actions { display: flex; gap: 20px; justify-content: center; }
-  .btn-primary { background: var(--primary); color: #000; border: 1px solid var(--primary); padding: 16px 36px; font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 0.15em; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s ease; }
+  .btn-primary { background: var(--primary); color: #000; border: 1px solid var(--primary); padding: 16px 36px; font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 0.15em; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 10px; }
   .btn-primary:hover { background: transparent; color: var(--primary); }
-  .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--border); padding: 16px 36px; font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 0.15em; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s ease; }
+  .btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--border); padding: 16px 36px; font-family: 'Orbitron', monospace; font-size: 0.8rem; letter-spacing: 0.15em; font-weight: 700; cursor: pointer; text-decoration: none; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 10px; }
   .btn-outline:hover { border-color: var(--primary); background: rgba(255,255,255,0.03); }
 
   /* Stats Bar */
@@ -65,6 +65,22 @@
   .card-icon { font-size: 2.2rem; margin-bottom: 25px; color: var(--accent); }
   .card-title { font-family: 'Orbitron', monospace; font-size: 1.1rem; letter-spacing: 0.15em; color: var(--primary); margin-bottom: 15px; font-weight: 700; }
   .card-desc { font-size: 1rem; color: var(--secondary); line-height: 1.6; }
+
+  /* Forge Store Launcher Highlight Section (YENİ EKLENEN KISIM) */
+  .launcher-section { padding: 140px 60px; max-width: 1300px; margin: 0 auto; width: 100%; border-bottom: 1px solid var(--border); }
+  .launcher-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: center; }
+  .launcher-content h2 { font-family: 'Orbitron', monospace; font-size: 2.5rem; font-weight: 900; color: var(--primary); margin-bottom: 20px; line-height: 1.2; }
+  .launcher-content h2 span { color: var(--accent); }
+  .launcher-content p { font-size: 1.1rem; color: var(--secondary); line-height: 1.8; margin-bottom: 30px; }
+  .launcher-features { display: flex; flex-direction: column; gap: 15px; margin-bottom: 35px; }
+  .launcher-feature-item { display: flex; align-items: center; gap: 12px; font-size: 1.05rem; font-weight: 600; color: var(--primary); }
+  .launcher-feature-item span { color: var(--accent); font-size: 1.2rem; }
+  
+  .launcher-preview-box { background: var(--surface); border: 1px solid var(--border); padding: 40px; text-align: center; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+  .launcher-preview-box::before { content: '// DESKTOP CLIENT v1.0.0'; position: absolute; top: 15px; left: 20px; font-family: 'Orbitron', monospace; font-size: 0.7rem; color: var(--secondary); letter-spacing: 0.2em; }
+  .launcher-badge { display: inline-block; background: rgba(58, 134, 255, 0.1); border: 1px solid var(--accent); color: var(--accent); padding: 6px 16px; font-family: 'Orbitron', monospace; font-size: 0.75rem; letter-spacing: 0.15em; margin-bottom: 25px; margin-top: 15px; }
+  .client-specs { display: flex; justify-content: space-around; margin-top: 30px; padding-top: 25px; border-top: 1px solid var(--border); font-family: 'Orbitron', monospace; font-size: 0.8rem; color: var(--secondary); }
+  .client-specs strong { color: var(--primary); display: block; font-size: 1rem; margin-top: 5px; }
 
   /* About / Company Details Section */
   .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
@@ -113,10 +129,10 @@
     .stats-bar { grid-template-columns: repeat(2, 1fr); }
     .stat-item:nth-child(2) { border-right: none; }
     .grid-3 { grid-template-columns: 1fr; }
-    .about-grid { grid-template-columns: 1fr; }
+    .about-grid, .launcher-grid { grid-template-columns: 1fr; }
     .footer-grid { grid-template-columns: 1fr 1fr; }
     .navbar { padding: 20px 30px; }
-    .section { padding: 80px 30px; }
+    .section, .launcher-section { padding: 80px 30px; }
   }
   @media(max-width: 768px) {
     .nav-links { display: none; }
@@ -135,6 +151,7 @@
     <a href="#" class="brand">INTERFORM<span>.INC</span></a>
     <nav class="nav-links">
       <a href="#solutions">Çözümler</a>
+      <a href="#launcher">Forge Store</a>
       <a href="#about">Kurumsal</a>
       <a href="#technology">Teknoloji</a>
       <a href="#contact">İletişim</a>
@@ -151,7 +168,7 @@
     <p class="hero-desc">Interform Inc.; yapay zeka entegrasyonları, yüksek ölçeklenebilir bulut mimarileri ve kurumsal yazılım çözümleriyle global ölçekte işletmelerin dijital dönüşümünü hızlandıran öncü bir teknoloji kuruluşudur.</p>
     <div class="hero-actions">
       <a href="#solutions" class="btn-primary">ÇÖZÜMLERİMİZİ KEŞFET</a>
-      <a href="#contact" class="btn-outline">İLETİŞİME GEÇ</a>
+      <a href="#launcher" class="btn-outline">FORGE STORE İNDİR</a>
     </div>
   </section>
 
@@ -202,6 +219,39 @@
     </div>
   </div>
 
+  <!-- Forge Store Launcher Tanıtım ve İndirme Bölümü (YENİ) -->
+  <section class="launcher-section" id="launcher">
+    <div class="launcher-grid">
+      <div class="launcher-content">
+        <div class="section-subtitle" style="text-align: left; margin-bottom: 10px;">YENİ NESİL MASAÜSTÜ İSTEMCİSİ</div>
+        <h2>Oyun ve Uygulama Dünyanız Tek Noktada: <span>Forge Store</span></h2>
+        <p>Interform ekosistemine özel olarak geliştirilen Forge Store; şirket içi oyun koleksiyonunuzu yönetebileceğiniz, dahili mağazadan içerik keşfedip sepetinize ekleyebileceğiniz ve diğer ekip üyeleriyle anlık iletişim kurabileceğiniz güçlü bir masaüstü uygulamasıdır.</p>
+        
+        <div class="launcher-features">
+          <div class="launcher-feature-item"><span>✓</span> Optimize edilmiş yüksek performanslı Electron altyapısı</div>
+          <div class="launcher-feature-item"><span>✓</span> Entegre sepet, kütüphane ve yönetim paneli modülleri</div>
+          <div class="launcher-feature-item"><span>✓</span> Güvenli oturum açma ve rol tabanlı yetkilendirme</div>
+        </div>
+
+        <a href="Forge Store Setup.exe" class="btn-primary" download>
+          📥 İSTEMCİYİ HEMEN İNDİR (v1.0.0)
+        </a>
+      </div>
+
+      <div class="launcher-preview-box">
+        <div class="launcher-badge">WİNDOWS UYUMLU İSTEMCİ</div>
+        <h3 style="font-family: 'Orbitron', monospace; font-size: 1.3rem; color: var(--primary); margin-bottom: 15px;">INTERFORM FORGE STORE</h3>
+        <p style="color: var(--secondary); font-size: 0.95rem; margin-bottom: 25px;">Bilgisayarınıza kolayca kurun, hemen giriş yapın ve kurumsal oyun/uygulama ağınıza bağlanın.</p>
+        
+        <div class="client-specs">
+          <div>PLATFORM<strong>Windows 10/11</strong></div>
+          <div>MİMARİ<strong>x64 / Setup</strong></div>
+          <div>DURUM<strong>Aktif / Kararlı</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- About Section -->
   <section class="section" id="about">
     <div class="about-grid">
@@ -220,11 +270,11 @@
         <div class="tech-stack-title">// KULLANILAN TEKNOLOJİLER & STACK</div>
         <p style="font-size: 0.95rem; color: var(--secondary);">Sistemlerimizin arkasındaki modern teknoloji yığını:</p>
         <div class="tech-tags">
+          <span class="tech-tag">ELECTRON</span>
+          <span class="tech-tag">NODE.JS</span>
           <span class="tech-tag">FASTAPI</span>
           <span class="tech-tag">PYTHON 3.12</span>
-          <span class="tech-tag">GROQ AI API</span>
           <span class="tech-tag">DOCKER</span>
-          <span class="tech-tag">REDIS</span>
           <span class="tech-tag">POSTGRESQL</span>
         </div>
         <div style="border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px;">
@@ -281,11 +331,11 @@
         </div>
       </div>
       <div class="footer-col">
-        <h4>KURUMSAL</h4>
+        <h4>ÜRÜNLER</h4>
         <div class="footer-links">
+          <a href="#launcher">Forge Store İstemcisi</a>
           <a href="#about">Hakkımızda</a>
           <a href="#technology">Teknoloji Stack</a>
-          <a href="#contact">Kariyer</a>
         </div>
       </div>
       <div class="footer-col">
